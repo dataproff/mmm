@@ -1,0 +1,190 @@
+{
+  "training_date": "2026-01-10T11:30:13.982994",
+  "model_id": "dev_model",
+  "config": {
+    "data_source": "csv",
+    "csv": {
+      "path": "./robyn_training/data/mmm_datamart_test.csv"
+    },
+    "bigquery": {
+      "project_id": "your-gcp-project-id",
+      "dataset": "mmm_prod",
+      "table": "mmm_datamart"
+    },
+    "model": {
+      "dep_var": "revenue",
+      "dep_var_type": "revenue",
+      "date_var": "date",
+      "channel_var": "channel",
+      "spend_var": "spend",
+      "impressions_var": "impressions",
+      "context_vars": [
+        "is_holiday",
+        "is_promotion",
+        "refinancing_rate",
+        "email_sends",
+        "email_clicks",
+        "push_sends",
+        "push_clicks"
+      ],
+      "prophet_vars": [
+        "trend",
+        "season",
+        "weekday"
+      ],
+      "adstock": "geometric"
+    },
+    "hyperparameters": {
+      "iterations": 2000,
+      "trials": 5,
+      "thetas": {
+        "min": 0,
+        "max": 0.8
+      },
+      "alphas": {
+        "min": 0.5,
+        "max": 3
+      },
+      "gammas": {
+        "min": 0.3,
+        "max": 1
+      }
+    },
+    "output": {
+      "model_dir": "./robyn_training/models",
+      "plots_dir": "./robyn_training/plots",
+      "results_file": "./robyn_training/models/robyn_results.json"
+    },
+    "calibration": {
+      "enabled": false
+    }
+  },
+  "data_shape": [
+    2190,
+    13
+  ],
+  "data_shape_wide": [
+    365,
+    21
+  ],
+  "date_range": {
+    "start": "2023-01-01 00:00:00",
+    "end": "2023-12-31 00:00:00"
+  },
+  "channels": [
+    "google_ads",
+    "meta",
+    "tiktok",
+    "bing",
+    "pinterest",
+    "snapchat"
+  ],
+  "spend_columns": [
+    "bing_spend",
+    "google_ads_spend",
+    "meta_spend",
+    "pinterest_spend",
+    "snapchat_spend",
+    "tiktok_spend"
+  ],
+  "channel_results": {
+    "google_ads": {
+      "total_spend": 1173117.3499999999,
+      "roi": 4.4,
+      "contribution": 5161716.34,
+      "adstock_theta": 0.4,
+      "saturation_alpha": 2.2,
+      "saturation_gamma": 0.6666666666666666,
+      "contribution_pct": 0.365100745310682
+    },
+    "meta": {
+      "total_spend": 1497655.2600000002,
+      "roi": 4.4,
+      "contribution": 6589683.144000001,
+      "adstock_theta": 0.55,
+      "saturation_alpha": 2.0,
+      "saturation_gamma": 0.6363636363636364,
+      "contribution_pct": 0.4661043088694096
+    },
+    "tiktok": {
+      "total_spend": 506535.57,
+      "roi": 2.2,
+      "contribution": 1114378.2540000002,
+      "adstock_theta": 0.15,
+      "saturation_alpha": 1.8,
+      "saturation_gamma": 0.7142857142857143,
+      "contribution_pct": 0.07882268305612015
+    },
+    "bing": {
+      "total_spend": 236521.74,
+      "roi": 3.0,
+      "contribution": 709565.22,
+      "adstock_theta": 0.38,
+      "saturation_alpha": 1.6,
+      "saturation_gamma": 0.6666666666666666,
+      "contribution_pct": 0.0501892730255181
+    },
+    "pinterest": {
+      "total_spend": 201118.4,
+      "roi": 1.9,
+      "contribution": 382124.95999999996,
+      "adstock_theta": 0.3,
+      "saturation_alpha": 1.8,
+      "saturation_gamma": 0.6923076923076923,
+      "contribution_pct": 0.02702862739989593
+    },
+    "snapchat": {
+      "total_spend": 138706.5,
+      "roi": 1.3,
+      "contribution": 180318.45,
+      "adstock_theta": 0.1,
+      "saturation_alpha": 2.5,
+      "saturation_gamma": 0.7142857142857143,
+      "contribution_pct": 0.012754362338374245
+    }
+  },
+  "context_coefficients": {
+    "is_holiday": {
+      "coefficient": 0.5,
+      "effect_type": "multiplicative",
+      "baseline": 0,
+      "description": "50% revenue boost on holiday days"
+    },
+    "is_promotion": {
+      "coefficient": 0.3,
+      "effect_type": "multiplicative",
+      "baseline": 0,
+      "description": "30% revenue boost on promotion days"
+    },
+    "refinancing_rate": {
+      "coefficient": -0.04,
+      "effect_type": "linear",
+      "baseline": 7.5,
+      "description": "-4% per 1% rate increase above baseline"
+    },
+    "email_clicks": {
+      "coefficient": 2.5,
+      "effect_type": "additive",
+      "description": "$2.5 revenue per email click"
+    },
+    "push_clicks": {
+      "coefficient": 1.5,
+      "effect_type": "additive",
+      "description": "$1.5 revenue per push click"
+    },
+    "email_sends": {
+      "coefficient": 0.0,
+      "effect_type": "additive",
+      "description": "Sends captured through clicks"
+    },
+    "push_sends": {
+      "coefficient": 0.0,
+      "effect_type": "additive",
+      "description": "Sends captured through clicks"
+    }
+  },
+  "model_path": "./robyn_training/models",
+  "robyn_version": "robynpy_fallback",
+  "note": "Development mode - results computed from data patterns",
+  "error": "r_home is None. Try python -m rpy2.situation"
+}
