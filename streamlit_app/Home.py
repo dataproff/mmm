@@ -334,18 +334,6 @@ def load_model(_file_hash=None):
     model_path = app_dir / ".." / "robyn_training" / "models"
     model_path = model_path.resolve()
 
-    # Debug: show paths
-    st.info(f"Debug: Looking for model at: {model_path}")
-    st.info(f"Debug: Model file exists: {(model_path / 'robyn_results.json').exists()}")
-    st.info(f"Debug: App dir: {app_dir}")
-
-    # List files in parent directory
-    try:
-        parent_dir = app_dir.parent
-        st.info(f"Debug: Parent directory contents: {list(parent_dir.iterdir())}")
-    except Exception as e:
-        st.warning(f"Debug: Could not list parent dir: {e}")
-
     loader = ModelLoader(model_path=str(model_path))
     try:
         results = loader.load_model_results()
