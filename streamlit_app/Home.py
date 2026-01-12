@@ -13,7 +13,7 @@ st.set_page_config(
 
 def get_logo_base64():
     """Load logo and convert to base64 for embedding"""
-    logo_path = Path(__file__).parent.parent / "web_resources" / "dataprof.png"
+    logo_path = Path(__file__).parent / "web_resources" / "dataprof.png"
     if logo_path.exists():
         with open(logo_path, "rb") as f:
             return base64.b64encode(f.read()).decode()
@@ -221,7 +221,7 @@ st.markdown(t('about.subtitle'))
 col_diagram, col_video = st.columns([3, 1])
 
 with col_diagram:
-    diagram_path = Path(__file__).parent.parent.parent / "docs" / "mmm_in_onde_diagram.svg"
+    diagram_path = Path(__file__).parent.parent / "docs" / "mmm_in_onde_diagram.svg"
     if diagram_path.exists():
         with open(diagram_path, "r", encoding="utf-8") as f:
             svg_content = f.read()
@@ -238,7 +238,7 @@ with col_diagram:
         st.warning(t('about.diagram_not_found'))
 
 with col_video:
-    video_path = Path(__file__).parent.parent.parent / "docs" / "video_demo_branded.mp4"
+    video_path = Path(__file__).parent.parent / "docs" / "video_demo_branded.mp4"
     if video_path.exists():
         st.video(str(video_path))
         st.caption(t('about.video_demo_caption'))
