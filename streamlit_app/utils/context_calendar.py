@@ -36,21 +36,8 @@ class ContextCalendar:
 
     def _load_calendar(self):
         """Load calendar data from CSV"""
-        logger.info(f"Attempting to load calendar from: {self.calendar_path.absolute()}")
-        logger.info(f"File exists: {self.calendar_path.exists()}")
-
         if not self.calendar_path.exists():
             logger.warning(f"Calendar file not found: {self.calendar_path}")
-            # Try to list parent directory contents
-            try:
-                parent = self.calendar_path.parent
-                logger.info(f"Parent directory: {parent}")
-                logger.info(f"Parent exists: {parent.exists()}")
-                if parent.exists():
-                    logger.info(f"Parent contents: {list(parent.iterdir())}")
-            except Exception as e:
-                logger.error(f"Could not list parent directory: {e}")
-
             self.df = pd.DataFrame()
             return
 

@@ -154,7 +154,12 @@ def render_header():
 @st.cache_resource
 def load_model():
     """Load MMM model with caching"""
-    loader = ModelLoader()
+    # Use absolute path relative to this file
+    app_dir = Path(__file__).parent.parent
+    model_path = app_dir / ".." / "robyn_training" / "models"
+    model_path = model_path.resolve()
+
+    loader = ModelLoader(model_path=str(model_path))
     try:
         results = loader.load_model_results()
         channel_params = loader.get_channel_parameters(results)
