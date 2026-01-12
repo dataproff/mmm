@@ -40,7 +40,8 @@ dbt_project/dbt_packages/
 dbt_project/logs/
 
 # Robyn
-robyn_training/models/*
+robyn_training/models/*.pkl
+robyn_training/models/*.pkl.old
 !robyn_training/models/.gitkeep
 robyn_training/plots/
 *.rds
@@ -54,6 +55,7 @@ robyn_training/plots/
 *.parquet
 *.xlsx
 !dbt_project/seeds/*.csv
+!streamlit_app/data/context_calendar*.csv
 
 # Logs
 *.log
