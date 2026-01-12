@@ -1,0 +1,14 @@
+[[pages]]
+path = "🏠_Home.py"
+name = "Home"
+icon = ":house:"
+
+[[pages]]
+path = "pages/1_📅_Context_Calendar.py"
+name = "Context Calendar"
+icon = ":calendar:"
+
+[[pages]]
+path = "pages/2_📈_Saturation_Curves.py"
+name = "Saturation Curves"
+icon = ":chart_with_upwards_trend:"
