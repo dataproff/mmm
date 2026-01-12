@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 class ModelLoader:
     """Load and manage Robyn MMM model artifacts"""
 
-    def __init__(self, model_path: str = "../robyn_training/models"):
+    def __init__(self, model_path: str = "./models"):
         """
         Initialize model loader
 
