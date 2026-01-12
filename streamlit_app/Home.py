@@ -329,7 +329,12 @@ def get_model_file_hash():
 @st.cache_resource
 def load_model(_file_hash=None):
     """Load MMM model with caching (invalidates when file changes)"""
-    loader = ModelLoader()
+    # Use absolute path relative to this file
+    app_dir = Path(__file__).parent
+    model_path = app_dir / ".." / "robyn_training" / "models"
+    model_path = model_path.resolve()
+
+    loader = ModelLoader(model_path=str(model_path))
     try:
         results = loader.load_model_results()
         channel_params = loader.get_channel_parameters(results)
@@ -424,8 +429,13 @@ def main():
     context_calendar = load_context_calendar()
 
     # Initialize optimizer (uses Robyn model if available, otherwise fallback)
+    # Use absolute path relative to this file
+    app_dir = Path(__file__).parent
+    model_path = app_dir / ".." / "robyn_training" / "models"
+    model_path = model_path.resolve()
+
     optimizer = RobynOptimizer(
-        model_path="../robyn_training/models",
+        model_path=str(model_path),
         channel_params=channel_params
     )
 
