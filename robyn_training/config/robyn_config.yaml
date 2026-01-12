@@ -1,0 +1,87 @@
+# Robyn MMM Configuration
+
+# Data source: "bigquery" or "csv"
+data_source: "csv"
+
+# CSV Configuration (for local testing)
+csv:
+  path: "./robyn_training/data/mmm_datamart_test.csv"
+
+# BigQuery Configuration (for production)
+bigquery:
+  project_id: "your-gcp-project-id"
+  dataset: "mmm_prod"
+  table: "mmm_datamart"
+
+# Model Configuration
+model:
+  # Dependent variable (KPI to optimize)
+  dep_var: "revenue"  # or "orders"
+  dep_var_type: "revenue"  # revenue or conversion
+
+  # Date column
+  date_var: "date"
+
+  # Channel column (long format)
+  channel_var: "channel"
+
+  # Spend column
+  spend_var: "spend"
+
+  # Optional: impressions column
+  impressions_var: "impressions"
+
+  # Context/control variables (external factors affecting revenue)
+  context_vars:
+    - "is_holiday"
+    - "is_promotion"
+    - "refinancing_rate"  # Macroeconomic: Central Bank key rate
+    - "email_sends"       # CRM: Email campaign sends
+    - "email_clicks"      # CRM: Email clicks
+    - "push_sends"        # CRM: Push notification sends
+    - "push_clicks"       # CRM: Push notification clicks
+
+  # Prophet variables for trend and seasonality
+  prophet_vars:
+    - "trend"
+    - "season"
+    - "weekday"
+
+  # Adstock parameters
+  adstock: "geometric"  # geometric or weibull
+
+# Hyperparameters
+hyperparameters:
+  # Iterations for model training
+  iterations: 2000
+  trials: 5
+
+  # Adstock hyperparameter ranges
+  thetas:
+    min: 0
+    max: 0.8
+
+  # Saturation hyperparameter ranges (Hill function)
+  alphas:
+    min: 0.5
+    max: 3
+
+  gammas:
+    min: 0.3
+    max: 1
+
+# Output Configuration
+output:
+  model_dir: "./robyn_training/models"
+  plots_dir: "./robyn_training/plots"
+  results_file: "./robyn_training/models/robyn_results.json"
+
+# Calibration (optional)
+calibration:
+  enabled: false
+  # Add calibration experiments if available
+  # experiments:
+  #   - channel: "meta"
+  #     lift_start_date: "2023-06-01"
+  #     lift_end_date: "2023-06-14"
+  #     lift_value: 0.15
