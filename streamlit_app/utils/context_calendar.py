@@ -17,13 +17,19 @@ logger = logging.getLogger(__name__)
 class ContextCalendar:
     """Manages context calendar data for MMM predictions"""
 
-    def __init__(self, calendar_path: str = "data/context_calendar_2026.csv"):
+    def __init__(self, calendar_path: Optional[str] = None):
         """
         Initialize context calendar
 
         Args:
-            calendar_path: Path to the CSV calendar file
+            calendar_path: Path to the CSV calendar file (default: data/context_calendar_2026.csv relative to streamlit_app)
         """
+        if calendar_path is None:
+            # Use absolute path relative to this file
+            utils_dir = Path(__file__).parent
+            calendar_path = utils_dir / ".." / "data" / "context_calendar_2026.csv"
+            calendar_path = calendar_path.resolve()
+
         self.calendar_path = Path(calendar_path)
         self.df: Optional[pd.DataFrame] = None
         self._load_calendar()
