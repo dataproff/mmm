@@ -1,0 +1,243 @@
+version: 2
+
+models:
+  - name: stg_revenue
+    description: "Daily revenue and orders from transaction data"
+    columns:
+      - name: date
+        description: "Transaction date"
+        tests:
+          - not_null
+          - unique
+      - name: revenue
+        description: "Total revenue for the day"
+      - name: orders
+        description: "Number of orders"
+      - name: avg_order_value
+        description: "Average order value"
+
+  - name: stg_channel_spend
+    description: "Daily marketing spend by channel"
+    columns:
+      - name: date
+        description: "Spend date"
+        tests:
+          - not_null
+      - name: channel
+        description: "Marketing channel name"
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['tiktok', 'meta', 'google_ads', 'bing', 'pinterest', 'snapchat']
+      - name: spend
+        description: "Marketing spend"
+      - name: impressions
+        description: "Ad impressions"
+      - name: clicks
+        description: "Ad clicks"
+
+  - name: stg_refinancing_rate
+    description: "Central Bank refinancing rate (key rate) - macroeconomic control variable"
+    columns:
+      - name: date
+        description: "Date"
+        tests:
+          - not_null
+          - unique
+      - name: refinancing_rate
+        description: "Key rate as decimal (e.g., 0.16 for 16%)"
+      - name: rate_changed
+        description: "Binary flag indicating if rate changed on this date"
+
+  - name: stg_email_push
+    description: "Email and push notification campaigns - owned media channels"
+    columns:
+      - name: date
+        description: "Campaign send date"
+        tests:
+          - not_null
+      - name: channel_type
+        description: "Channel type (email or push)"
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['email', 'push']
+      - name: sends
+        description: "Number of messages sent"
+      - name: delivered
+        description: "Number of messages delivered"
+      - name: opens
+        description: "Number of messages opened"
+      - name: clicks
+        description: "Number of clicks"
+      - name: open_rate
+        description: "Open rate (opens/delivered)"
+      - name: ctr
+        description: "Click-through rate (clicks/delivered)"
+
+  - name: mmm_datamart
+    description: "Final MMM-ready datamart for Robyn modeling (long format with channel column)"
+    columns:
+      - name: date
+        description: "Date dimension"
+        tests:
+          - not_null
+      - name: channel
+        description: "Marketing channel name (e.g., tiktok, meta, google_ads)"
+        tests:
+          - not_null
+      - name: spend
+        description: "Daily marketing spend for this channel"
+      - name: impressions
+        description: "Daily ad impressions for this channel"
+      - name: clicks
+        description: "Daily ad clicks for this channel"
+      - name: ctr
+        description: "Click-through rate (clicks/impressions)"
+      - name: cpc
+        description: "Cost per click (spend/clicks)"
+      - name: revenue
+        description: "Daily revenue (dependent variable, same for all channels on same date)"
+      - name: orders
+        description: "Daily orders (alternative dependent variable)"
+      - name: refinancing_rate
+        description: "Central Bank key rate (macroeconomic control variable)"
+      - name: rate_changed
+        description: "Binary flag if rate changed on this date"
+      - name: email_sends
+        description: "Number of emails sent"
+      - name: email_opens
+        description: "Number of emails opened"
+      - name: email_clicks
+        description: "Number of email clicks"
+      - name: push_sends
+        description: "Number of push notifications sent"
+      - name: push_opens
+        description: "Number of push notifications opened"
+      - name: push_clicks
+        description: "Number of push notification clicks"
+      - name: total_crm_sends
+        description: "Total CRM sends (email + push)"
+      - name: total_crm_clicks
+        description: "Total CRM clicks (email + push)"
+    tests:
+      - unique:
+          column_name: "concat(date, '|', channel)"
+
+seeds:
+  - name: calendar_events
+    description: "Holiday and promotion calendar"
+    columns:
+      - name: date
+        description: "Event date"
+        tests:
+          - not_null
+      - name: event_type
+        description: "Type of event (holiday or promotion)"
+      - name: event_name
+        description: "Name of the event"
+      - name: is_holiday
+        description: "Binary flag for holidays"
+
+  - name: raw_transactions
+    description: "Raw transaction/revenue data for testing"
+    columns:
+      - name: date
+        tests:
+          - not_null
+      - name: revenue
+      - name: orders
+
+  - name: raw_tiktok_ads
+    description: "Raw TikTok ads data for testing"
+    columns:
+      - name: date
+        tests:
+          - not_null
+      - name: spend
+      - name: impressions
+      - name: clicks
+
+  - name: raw_meta_ads
+    description: "Raw Meta (Facebook/Instagram) ads data for testing"
+    columns:
+      - name: date
+        tests:
+          - not_null
+      - name: spend
+      - name: impressions
+      - name: clicks
+
+  - name: raw_google_ads
+    description: "Raw Google Ads data for testing"
+    columns:
+      - name: date
+        tests:
+          - not_null
+      - name: cost
+      - name: impressions
+      - name: clicks
+
+  - name: raw_bing_ads
+    description: "Raw Bing Ads data for testing"
+    columns:
+      - name: date
+        tests:
+          - not_null
+      - name: spend
+      - name: impressions
+      - name: clicks
+
+  - name: raw_pinterest_ads
+    description: "Raw Pinterest Ads data for testing"
+    columns:
+      - name: date
+        tests:
+          - not_null
+      - name: spend
+      - name: impressions
+      - name: clicks
+
+  - name: raw_snapchat_ads
+    description: "Raw Snapchat Ads data for testing"
+    columns:
+      - name: date
+        tests:
+          - not_null
+      - name: spend
+      - name: impressions
+      - name: swipes
+
+  - name: raw_central_bank_rates
+    description: "Central Bank key rate changes for testing"
+    columns:
+      - name: effective_date
+        tests:
+          - not_null
+      - name: rate_type
+      - name: rate_value
+
+  - name: raw_email_campaigns
+    description: "Raw email campaign data for testing"
+    columns:
+      - name: sent_date
+        tests:
+          - not_null
+      - name: emails_sent
+      - name: emails_delivered
+      - name: emails_opened
+      - name: emails_clicked
+      - name: unsubscribes
+      - name: revenue_attributed
+
+  - name: raw_push_campaigns
+    description: "Raw push notification campaign data for testing"
+    columns:
+      - name: sent_date
+        tests:
+          - not_null
+      - name: pushes_sent
+      - name: pushes_delivered
+      - name: pushes_opened
+      - name: pushes_clicked
+      - name: revenue_attributed

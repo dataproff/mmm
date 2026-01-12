@@ -1,0 +1,127 @@
+@startuml MMM_Budget_Optimizer_Architecture
+
+!define RECTANGLE class
+!define ICONURL https://raw.githubusercontent.com/tupadr3/plantuml-icon-font-sprites/master
+
+skinparam backgroundColor #FEFEFE
+skinparam roundcorner 15
+skinparam shadowing true
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+
+skinparam rectangle {
+    BackgroundColor<<data>> #E3F2FD
+    BorderColor<<data>> #1976D2
+    BackgroundColor<<model>> #FFF3E0
+    BorderColor<<model>> #F57C00
+    BackgroundColor<<app>> #E8F5E9
+    BorderColor<<app>> #388E3C
+    BackgroundColor<<output>> #FCE4EC
+    BorderColor<<output>> #C2185B
+    BackgroundColor<<user>> #F3E5F5
+    BorderColor<<user>> #7B1FA2
+}
+
+title <size:24>**MMM Budget Optimizer**</size>\n<size:16>Marketing Mix Modeling Platform</size>\n
+
+' === DATA SOURCES ===
+rectangle "**Data Sources**" <<data>> as DataSources {
+    rectangle "Marketing Spend\n(Google, Meta, TikTok...)" as MarketingData
+    rectangle "Revenue / Sales\nData" as RevenueData
+    rectangle "Context Calendar\n(Holidays, Promotions)" as CalendarData
+    rectangle "Macro Factors\n(Refinancing Rate)" as MacroData
+    rectangle "CRM Data\n(Email, Push)" as CRMData
+}
+
+' === MMM ENGINE ===
+rectangle "**MMM Engine**" <<model>> as MMMEngine {
+    rectangle "Saturation Curves\n(Hill Function)" as Saturation
+    rectangle "Adstock Effects\n(Carryover)" as Adstock
+    rectangle "Channel ROI\nCalculation" as ROI
+    rectangle "Context Multipliers\n(Seasonality)" as Context
+}
+
+' === OPTIMIZER ===
+rectangle "**Budget Optimizer**" <<model>> as Optimizer {
+    rectangle "Target Revenue\nOptimization" as TargetOpt
+    rectangle "Budget Allocation\nOptimization" as BudgetOpt
+    rectangle "Scenario\nAnalysis" as ScenarioOpt
+}
+
+' === APPLICATION ===
+rectangle "**Interactive Dashboard**" <<app>> as Dashboard {
+    rectangle "Budget Planning\nInterface" as BudgetUI
+    rectangle "Saturation Curves\nVisualization" as SaturationUI
+    rectangle "Context Calendar\nView" as CalendarUI
+    rectangle "Multi-language\nSupport (EN/RU)" as i18n
+}
+
+' === OUTPUTS ===
+rectangle "**Business Insights**" <<output>> as Outputs {
+    rectangle "Optimal Budget\nAllocation" as OptimalBudget
+    rectangle "Revenue\nForecast" as RevenueForecast
+    rectangle "ROI by\nChannel" as ChannelROI
+    rectangle "What-If\nScenarios" as WhatIf
+}
+
+' === USER ===
+rectangle "**Marketing Team**" <<user>> as Users {
+    rectangle "Marketing\nManager" as MarketingMgr
+    rectangle "Media\nPlanner" as MediaPlanner
+    rectangle "CMO /\nExecutive" as CMO
+}
+
+' === CONNECTIONS ===
+
+' Data to Engine
+MarketingData --> Saturation
+MarketingData --> Adstock
+RevenueData --> ROI
+CalendarData --> Context
+MacroData --> Context
+CRMData --> Context
+
+' Engine internal
+Saturation --> ROI
+Adstock --> Saturation
+Context --> ROI
+
+' Engine to Optimizer
+ROI --> TargetOpt
+ROI --> BudgetOpt
+ROI --> ScenarioOpt
+Context --> TargetOpt
+Context --> BudgetOpt
+
+' Optimizer to Dashboard
+TargetOpt --> BudgetUI
+BudgetOpt --> BudgetUI
+ScenarioOpt --> BudgetUI
+Saturation --> SaturationUI
+Context --> CalendarUI
+
+' Dashboard to Outputs
+BudgetUI --> OptimalBudget
+BudgetUI --> RevenueForecast
+SaturationUI --> ChannelROI
+ScenarioOpt --> WhatIf
+
+' Users interact with Dashboard
+Users -[hidden]-> Dashboard
+MarketingMgr --> BudgetUI
+MediaPlanner --> SaturationUI
+CMO --> WhatIf
+
+' Legend
+legend right
+  |= Color |= Component |
+  |<#E3F2FD>| Data Sources |
+  |<#FFF3E0>| Analytics Engine |
+  |<#E8F5E9>| User Interface |
+  |<#FCE4EC>| Business Outputs |
+  |<#F3E5F5>| End Users |
+endlegend
+
+footer \n**DataProf MMM** | Powered by Marketing Mix Modeling | 2024
+
+@enduml

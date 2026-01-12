@@ -1,0 +1,111 @@
+name: 'mmm_datamart'
+version: '1.0.0'
+config-version: 2
+
+profile: 'mmm'
+
+model-paths: ["models"]
+analysis-paths: ["analyses"]
+test-paths: ["tests"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
+
+target-path: "target"
+clean-targets:
+  - "target"
+  - "dbt_packages"
+
+models:
+  mmm_datamart:
+    staging:
+      +materialized: view
+      +schema: staging
+    mart:
+      +materialized: table
+      +schema: mart
+
+vars:
+  # Date range for historical data
+  start_date: '2023-01-01'
+
+  # Channel configuration
+  channels:
+    - tiktok
+    - meta
+    - google_ads
+    - bing
+    - pinterest
+    - snapchat
+
+seeds:
+  mmm_datamart:
+    raw_tiktok_ads:
+      +column_types:
+        date: date
+        spend: float64
+        impressions: int64
+        clicks: int64
+    raw_meta_ads:
+      +column_types:
+        date: date
+        spend: float64
+        impressions: int64
+        clicks: int64
+    raw_google_ads:
+      +column_types:
+        date: date
+        cost: float64
+        impressions: int64
+        clicks: int64
+    raw_bing_ads:
+      +column_types:
+        date: date
+        spend: float64
+        impressions: int64
+        clicks: int64
+    raw_pinterest_ads:
+      +column_types:
+        date: date
+        spend: float64
+        impressions: int64
+        clicks: int64
+    raw_snapchat_ads:
+      +column_types:
+        date: date
+        spend: float64
+        impressions: int64
+        swipes: int64
+    raw_transactions:
+      +column_types:
+        date: date
+        revenue: float64
+        orders: int64
+    raw_central_bank_rates:
+      +column_types:
+        effective_date: date
+        rate_type: string
+        rate_value: float64
+    raw_email_campaigns:
+      +column_types:
+        sent_date: date
+        emails_sent: int64
+        emails_delivered: int64
+        emails_opened: int64
+        emails_clicked: int64
+        unsubscribes: int64
+        revenue_attributed: float64
+    raw_push_campaigns:
+      +column_types:
+        sent_date: date
+        pushes_sent: int64
+        pushes_delivered: int64
+        pushes_opened: int64
+        pushes_clicked: int64
+        revenue_attributed: float64
+    calendar_events:
+      +column_types:
+        date: date
+        event_type: string
+        event_name: string
+        is_holiday: int64

@@ -1,0 +1,28 @@
+date,event_type,event_name,is_holiday
+2022-01-01,holiday,New Year's Day,1
+2022-02-14,promotion,Valentine's Day,0
+2022-05-30,holiday,Memorial Day,1
+2022-07-04,holiday,Independence Day,1
+2022-09-05,holiday,Labor Day,1
+2022-11-24,holiday,Thanksgiving,1
+2022-11-25,promotion,Black Friday,0
+2022-11-28,promotion,Cyber Monday,0
+2022-12-25,holiday,Christmas,1
+2023-01-01,holiday,New Year's Day,1
+2023-02-14,promotion,Valentine's Day,0
+2023-05-29,holiday,Memorial Day,1
+2023-07-04,holiday,Independence Day,1
+2023-09-04,holiday,Labor Day,1
+2023-11-23,holiday,Thanksgiving,1
+2023-11-24,promotion,Black Friday,0
+2023-11-27,promotion,Cyber Monday,0
+2023-12-25,holiday,Christmas,1
+2024-01-01,holiday,New Year's Day,1
+2024-02-14,promotion,Valentine's Day,0
+2024-05-27,holiday,Memorial Day,1
+2024-07-04,holiday,Independence Day,1
+2024-09-02,holiday,Labor Day,1
+2024-11-28,holiday,Thanksgiving,1
+2024-11-29,promotion,Black Friday,0
+2024-12-02,promotion,Cyber Monday,0
+2024-12-25,holiday,Christmas,1

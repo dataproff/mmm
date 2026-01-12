@@ -1,0 +1,93 @@
+@startuml
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName Arial
+skinparam defaultFontSize 13
+
+' Стили для компонентов
+skinparam rectangle {
+    BackgroundColor #FFFFFF
+    BorderColor #2C3E50
+    BorderThickness 2
+    roundCorner 15
+    shadowing true
+}
+
+skinparam arrow {
+    Color #2C3E50
+    Thickness 3
+}
+
+' Заголовок
+title <size:24><b>Marketing Mix Modeling Platform</b>\n<size:16>End-to-End Data & Analytics Pipeline
+
+' ==================== DATA SOURCES ====================
+package "<size:16><b>📊 Data Sources</b>" as sources #E8F4F8 {
+    rectangle "<b>💰 Marketing Spend</b>\nGoogle Ads, Facebook\nYandex Direct, TV, Radio" as marketing #FFFFFF
+    rectangle "<b>💵 Revenue Data</b>\nSales transactions\nE-commerce data" as revenue #FFFFFF
+    rectangle "<b>📅 Calendar Events</b>\nHolidays, Promos\nSeasonality" as calendar #FFFFFF
+    rectangle "<b>📈 Macro Factors</b>\nEconomic indicators\nMarket trends" as macro #FFFFFF
+    rectangle "<b>👥 CRM Data</b>\nCustomer base\nRetention metrics" as crm #FFFFFF
+
+    marketing -[hidden]right-> revenue
+    revenue -[hidden]right-> calendar
+    calendar -[hidden]right-> macro
+    macro -[hidden]right-> crm
+}
+
+' ==================== DATA WAREHOUSE ====================
+package "<size:16><b>🗄️ Data Warehouse</b>" as dwh #FFF4E6 {
+    rectangle "<b>1️⃣ Data Collection</b>\n📥 Ingestion from sources\nAPI connections" as collection #FFFFFF
+    rectangle "<b>2️⃣ Data Cleaning</b>\n🧹 Remove duplicates\nHandle missing values\nOutlier detection" as cleaning #FFFFFF
+    rectangle "<b>3️⃣ Data Integration</b>\n🔗 Join data sources\nAlign time periods\nStandardize formats" as integration #FFFFFF
+    rectangle "<b>4️⃣ Data Transformation</b>\n⚙️ Feature engineering\nAggregations\nNormalization" as transformation #FFFFFF
+
+    collection -[hidden]right-> cleaning
+    cleaning -[hidden]right-> integration
+    integration -[hidden]right-> transformation
+}
+
+' ==================== ML ENGINE ====================
+package "<size:16><b>🤖 MMM Machine Learning Engine</b>" as ml #E8F5E9 {
+    rectangle "<b>🎯 Feature Selection</b>\nSelect relevant factors\nCorrelation analysis\nDimensionality reduction" as features #FFFFFF
+    rectangle "<b>🔬 Model Training</b>\nSaturation curves\nAdstock effects\nBayesian optimization" as training #FFFFFF
+    rectangle "<b>✅ Model Validation</b>\nCross-validation\nR² score, MAPE\nResidual analysis" as validation #FFFFFF
+
+    features -[hidden]right-> training
+    training -[hidden]right-> validation
+}
+
+' ==================== INTERACTIVE DASHBOARD ====================
+package "<size:16><b>📱 Interactive Dashboard</b>" as dashboard #F3E5F5 {
+    rectangle "<b>💼 Budget Planning</b>\nOptimal allocation\nScenario comparison\nTarget optimization" as budget #FFFFFF
+    rectangle "<b>📊 Saturation Analysis</b>\nChannel efficiency\nDiminishing returns\nInflection points" as saturation #FFFFFF
+    rectangle "<b>📅 Context Calendar</b>\nEvent impact\nMultipliers\nSeasonality" as context #FFFFFF
+
+    budget -[hidden]right-> saturation
+    saturation -[hidden]right-> context
+}
+
+' ==================== BUSINESS INSIGHTS ====================
+package "<size:16><b>💡 Business Insights</b>" as insights #FFEBEE {
+    rectangle "<b>📌 Key Outcomes</b>\n\n✓ <b>Optimal Budget</b>\n  Channel-specific allocation\n\n✓ <b>Revenue Forecast</b>\n  Predicted returns\n\n✓ <b>Channel ROI</b>\n  Performance ranking\n\n✓ <b>What-If Scenarios</b>\n  Budget simulations" as outcomes #FFFFFF
+}
+
+' ==================== CONNECTIONS ====================
+' Main flow arrows (invisible - same color as background)
+sources -down[#FFFFFF,thickness=4]-> dwh
+dwh -down[#FFFFFF,thickness=4]-> ml
+ml -down[#FFFFFF,thickness=4]-> dashboard
+
+' Position Business Insights to the right of dashboard
+dashboard -[hidden]right-> outcomes
+
+' Легенда
+legend bottom left
+  <b>Process Flow</b>
+  ----
+  Data flows from top to bottom
+  Each stage transforms and enriches data
+  Business insights generated throughout
+endlegend
+
+@enduml
