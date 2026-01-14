@@ -186,5 +186,10 @@
   "model_path": "./robyn_training/models",
   "robyn_version": "robynpy_fallback",
   "note": "Development mode - results computed from data patterns",
-  "error": "r_home is None. Try python -m rpy2.situation"
+  "error": "r_home is None. Try python -m rpy2.situation",
+  "baseline": {
+    "intercept": 4707882.860544001,
+    "description": "Baseline revenue without paid media (organic traffic, brand strength, CRM, context effects)",
+    "percentage": 24.981245311327836
+  }
 }

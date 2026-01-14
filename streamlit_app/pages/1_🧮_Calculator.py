@@ -515,11 +515,26 @@ def main():
 
     st.sidebar.markdown("---")
     st.sidebar.markdown(f"### {t('sidebar.model_info')}")
+
+    # Get baseline info
+    baseline_info = results.get('baseline', {})
+    baseline_monthly = baseline_info.get('intercept', 0) / 12
+    baseline_pct = baseline_info.get('percentage', 0)
+
     st.sidebar.info(f"""
     **{t('sidebar.training_date')}:** {results.get('training_date', 'N/A')[:10]}
     **{t('sidebar.channels')}:** {len(channel_params)}
     **{t('sidebar.date_range')}:** {results.get('date_range', {}).get('start', 'N/A')} {t('common.to')} {results.get('date_range', {}).get('end', 'N/A')}
     """)
+
+    # Show baseline revenue
+    if baseline_info:
+        st.sidebar.metric(
+            "📊 Baseline (organic)",
+            fmt_currency(baseline_monthly),
+            delta=f"{baseline_pct:.1f}% of total",
+            help="Monthly revenue without paid advertising (organic traffic, brand, CRM)"
+        )
 
     # Control variables info
     st.sidebar.markdown(f"### {t('sidebar.control_variables')}")
@@ -546,7 +561,8 @@ def main():
         'multipliers': context_multipliers,
         'summary': month_summary,
         'n_days': month_summary['n_days'],
-        'daily_data': context_df  # Daily context DataFrame for optimizer
+        'daily_data': context_df,  # Daily context DataFrame for optimizer
+        'baseline_monthly': baseline_monthly  # Baseline revenue per month
     }
 
     if t('use_cases.budget_for_target') in use_case:
@@ -658,25 +674,32 @@ def render_target_leads_optimizer(optimizer: RobynOptimizer, channel_params: Dic
                 st.warning(f"⚠️ {result['message']}")
                 st.info(f"💡 {t('optimizer.warning_target')}")
 
-            # Metrics
-            metric_cols = st.columns(3)
-            metric_cols[0].metric(t('optimizer.budget_required'), fmt_currency(result['total_budget']))
-            metric_cols[1].metric(t('optimizer.predicted_revenue'), fmt_currency(result['predicted_leads']))
-            achievement_pct = (result['predicted_leads']/result['target_leads']*100) if result['target_leads'] > 0 else 0
-            metric_cols[2].metric(
-                t('optimizer.target_achievement'),
-                f"{achievement_pct:.1f}%",
-                delta=None if achievement_pct >= 95 else t('optimizer.target_not_achievable'),
-                delta_color="off" if achievement_pct < 95 else "normal"
-            )
+            # Metrics with baseline
+            baseline = context_info.get('baseline_monthly', 0)
+            paid_media_revenue = result['predicted_leads']
+            total_revenue = baseline + paid_media_revenue
 
-            # Show context breakdown
+            metric_cols = st.columns(4)
+            metric_cols[0].metric(t('optimizer.budget_required'), fmt_currency(result['total_budget']))
+            metric_cols[1].metric("Paid Media Revenue", fmt_currency(paid_media_revenue))
+            metric_cols[2].metric("Baseline (Organic)", fmt_currency(baseline))
+            metric_cols[3].metric("Total Revenue", fmt_currency(total_revenue))
+
+            # Achievement
+            achievement_pct = (total_revenue/result['target_leads']*100) if result['target_leads'] > 0 else 0
+            if achievement_pct < 95:
+                st.warning(f"⚠️ Target achievement: {achievement_pct:.1f}% - {t('optimizer.target_not_achievable')}")
+
+            # Show revenue breakdown
+            c = get_currency()
+            st.caption(f"💡 Total Revenue = {c}{baseline:,.0f} (baseline) + {c}{paid_media_revenue:,.0f} (paid media) = {c}{total_revenue:,.0f}")
+
+            # Show context breakdown if applicable
             if result.get('context_multiplier', 1.0) != 1.0 or result.get('crm_contribution', 0) > 0:
-                base = result.get('base_response', result['predicted_leads'])
+                base = result.get('base_response', paid_media_revenue)
                 mult = result.get('context_multiplier', 1.0)
                 crm = result.get('crm_contribution', 0)
-                c = get_currency()
-                st.caption(f"Base: {c}{base:,.0f} × {mult:.2f} + {c}{crm:,.0f} CRM = {c}{result['predicted_leads']:,.0f}")
+                st.caption(f"Context adjustment: {c}{base:,.0f} × {mult:.2f} + {c}{crm:,.0f} CRM = {c}{paid_media_revenue:,.0f}")
 
             # Allocation chart
             st.plotly_chart(
@@ -796,20 +819,28 @@ def render_budget_optimizer(optimizer: RobynOptimizer, channel_params: Dict, con
 
             st.subheader(t('optimizer.results_for', month=context_info['month_name']))
 
-            # Metrics
+            # Metrics with baseline
+            baseline = context_info.get('baseline_monthly', 0)
+            paid_media_revenue = result['predicted_leads']
+            total_revenue = baseline + paid_media_revenue
+            total_roi = total_revenue / result['total_budget'] if result['total_budget'] > 0 else 0
+
             metric_cols = st.columns(4)
             metric_cols[0].metric(t('optimizer.budget'), fmt_currency(result['total_budget']))
-            metric_cols[1].metric(t('optimizer.predicted_revenue'), fmt_currency(result['predicted_leads']))
-            metric_cols[2].metric(t('optimizer.roi'), f"{result['roi']:.2f}")
-            metric_cols[3].metric(t('optimizer.budget_utilization'), "100%")
+            metric_cols[1].metric("Paid Media Revenue", fmt_currency(paid_media_revenue))
+            metric_cols[2].metric("Total Revenue", fmt_currency(total_revenue))
+            metric_cols[3].metric(t('optimizer.roi'), f"{total_roi:.2f}")
 
-            # Show context breakdown
+            # Show revenue breakdown
+            c = get_currency()
+            st.caption(f"💡 Total Revenue = {c}{baseline:,.0f} (baseline) + {c}{paid_media_revenue:,.0f} (paid media) = {c}{total_revenue:,.0f}")
+
+            # Show context breakdown if applicable
             if result.get('context_multiplier', 1.0) != 1.0 or result.get('crm_contribution', 0) > 0:
-                base = result.get('base_response', result['predicted_leads'])
+                base = result.get('base_response', paid_media_revenue)
                 mult = result.get('context_multiplier', 1.0)
                 crm = result.get('crm_contribution', 0)
-                c = get_currency()
-                st.caption(f"Base: {c}{base:,.0f} × {mult:.2f} + {c}{crm:,.0f} CRM = {c}{result['predicted_leads']:,.0f}")
+                st.caption(f"Context adjustment: {c}{base:,.0f} × {mult:.2f} + {c}{crm:,.0f} CRM = {c}{paid_media_revenue:,.0f}")
 
             # Allocation chart
             st.plotly_chart(
@@ -894,15 +925,19 @@ def render_scenario_analysis(optimizer: RobynOptimizer, channel_params: Dict, co
                     context_mult = 1.0
                     crm_contribution = 0
 
-                # ROI is already calculated with context inside scenario_analysis
+                # Add baseline and calculate total revenue/ROI
+                baseline = context_info.get('baseline_monthly', 0)
                 for s in scenarios:
-                    s['roi'] = s['predicted_leads'] / s['total_budget'] if s['total_budget'] > 0 else 0
+                    s['paid_media_revenue'] = s['predicted_leads']
+                    s['total_revenue'] = baseline + s['predicted_leads']
+                    s['roi'] = s['total_revenue'] / s['total_budget'] if s['total_budget'] > 0 else 0
 
                 st.session_state['scenarios'] = scenarios
                 st.session_state['scenarios_context'] = {
                     'month_name': context_info['month_name'],
                     'context_mult': context_mult,
-                    'crm_contribution': crm_contribution
+                    'crm_contribution': crm_contribution,
+                    'baseline': baseline
                 }
 
     with col2:
@@ -912,13 +947,17 @@ def render_scenario_analysis(optimizer: RobynOptimizer, channel_params: Dict, co
 
             st.subheader(t('scenario.results_for', month=scenario_context.get('month_name', context_info['month_name'])))
 
-            # Prepare data for plotting
+            # Prepare data for plotting (now using total_revenue which includes baseline)
             c = get_currency()
             revenue_col = t('scenario.revenue_axis', currency=c).replace(f' ({c})', '')
+            baseline = scenario_context.get('baseline', 0)
+
             scenario_df = pd.DataFrame([
                 {
                     t('optimizer.budget'): s['total_budget'],
-                    revenue_col: s['predicted_leads'],
+                    revenue_col: s['total_revenue'],
+                    'Paid Media': s['paid_media_revenue'],
+                    'Baseline': baseline,
                     t('optimizer.roi'): s['roi']
                 }
                 for s in scenarios
@@ -953,6 +992,9 @@ def render_scenario_analysis(optimizer: RobynOptimizer, channel_params: Dict, co
                 yaxis_title=t('scenario.roi_axis')
             )
             st.plotly_chart(fig2, use_container_width=True)
+
+            # Show baseline info
+            st.info(f"💡 All scenarios include baseline revenue of {c}{baseline:,.0f}/month (organic traffic, brand, CRM)")
 
             # Show context adjustment info
             if scenario_context.get('context_mult', 1.0) != 1.0 or scenario_context.get('crm_contribution', 0) > 0:
