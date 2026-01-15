@@ -521,6 +521,10 @@ def main():
     baseline_monthly = baseline_info.get('intercept', 0) / 12
     baseline_pct = baseline_info.get('percentage', 0)
 
+    # Debug: Show if baseline is missing
+    if not baseline_info:
+        st.sidebar.warning("⚠️ Baseline data not found in model. Please retrain the model or check robyn_results.json")
+
     st.sidebar.info(f"""
     **{t('sidebar.training_date')}:** {results.get('training_date', 'N/A')[:10]}
     **{t('sidebar.channels')}:** {len(channel_params)}
