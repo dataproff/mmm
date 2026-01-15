@@ -282,6 +282,20 @@ def main():
 
     channels = list(channel_params.keys())
 
+    # Get baseline info
+    baseline_info = results.get('baseline', {})
+    baseline_monthly = baseline_info.get('intercept', 0) / 12
+
+    # Show baseline context
+    if baseline_info:
+        c = get_currency()
+        st.info(f"""
+        💡 **Note**: These curves show **paid media response only** for each channel.
+
+        Total revenue also includes baseline (organic) of {c}{baseline_monthly:,.0f}/month
+        from brand strength, organic traffic, and CRM activities.
+        """)
+
     # Sidebar controls
     st.sidebar.header(t('saturation.settings'))
 
