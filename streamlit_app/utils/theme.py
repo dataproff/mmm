@@ -332,18 +332,27 @@ DATAPROF_CSS = """
         display: none !important;
     }
 
-    .main .block-container {
-        padding-top: 0;
-    }
-
-    /* ===== Custom Header ===== */
+    /* ===== Custom Header (full-width top bar above sidebar + content) ===== */
     .dataprof-header {
-        background: rgba(2, 6, 23, 0.8);
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 999999;
+        background: rgba(2, 6, 23, 0.95);
         backdrop-filter: blur(24px);
         -webkit-backdrop-filter: blur(24px);
         border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-        padding: 1rem 2rem;
-        margin: -6rem -1rem 1rem -1rem;
+        padding: 0.6rem 2rem;
+        margin: 0;
+    }
+
+    /* Push sidebar and main content below the fixed header */
+    [data-testid="stSidebar"] {
+        top: 52px !important;
+    }
+    .main .block-container {
+        padding-top: 60px !important;
     }
 
     .dataprof-header-content {
