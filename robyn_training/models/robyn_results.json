@@ -21,11 +21,8 @@
       "context_vars": [
         "is_holiday",
         "is_promotion",
-        "refinancing_rate",
-        "email_sends",
-        "email_clicks",
-        "push_sends",
-        "push_clicks"
+        "fed_funds_rate",
+        "competitor_pressure_index"
       ],
       "prophet_vars": [
         "trend",
@@ -156,31 +153,17 @@
       "baseline": 0,
       "description": "30% revenue boost on promotion days"
     },
-    "refinancing_rate": {
+    "fed_funds_rate": {
       "coefficient": -0.04,
       "effect_type": "linear",
-      "baseline": 7.5,
+      "baseline": 3.58,
       "description": "-4% per 1% rate increase above baseline"
     },
-    "email_clicks": {
-      "coefficient": 2.5,
-      "effect_type": "additive",
-      "description": "$2.5 revenue per email click"
-    },
-    "push_clicks": {
-      "coefficient": 1.5,
-      "effect_type": "additive",
-      "description": "$1.5 revenue per push click"
-    },
-    "email_sends": {
-      "coefficient": 0.0,
-      "effect_type": "additive",
-      "description": "Sends captured through clicks"
-    },
-    "push_sends": {
-      "coefficient": 0.0,
-      "effect_type": "additive",
-      "description": "Sends captured through clicks"
+    "competitor_pressure_index": {
+      "coefficient": -0.001,
+      "effect_type": "linear",
+      "baseline": 50,
+      "description": "-1% per 10 index points above baseline"
     }
   },
   "model_path": "./robyn_training/models",
@@ -189,7 +172,7 @@
   "error": "r_home is None. Try python -m rpy2.situation",
   "baseline": {
     "intercept": 4707882.860544001,
-    "description": "Baseline revenue without paid media (organic traffic, brand strength, CRM, context effects)",
+    "description": "Baseline revenue without paid media (organic traffic, brand strength, context effects)",
     "percentage": 24.981245311327836
   }
 }
