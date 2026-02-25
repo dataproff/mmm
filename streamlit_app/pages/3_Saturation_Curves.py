@@ -19,7 +19,7 @@ from utils.model_loader import ModelLoader
 from utils.i18n import t, render_language_selector, get_currency, fmt_currency
 from utils.theme import (
     inject_css, render_header, render_sidebar_nav, apply_dark_theme,
-    INDIGO_500, EMERALD_400, SLATE_200,
+    INDIGO_500, EMERALD_400, SLATE_200, SLATE_500,
 )
 
 # Page configuration
@@ -57,6 +57,38 @@ def load_model():
 
 
 DAYS_PER_MONTH = 30  # Standard month for calculations
+
+
+def get_monthly_inflexion(params: dict) -> float:
+    """Calculate monthly inflexion point from channel parameters."""
+    hist_monthly = params.get('total_spend', 0) / 12
+    hist_daily = hist_monthly / DAYS_PER_MONTH
+    gamma_norm = params.get('saturation_gamma', 0.5)
+    theta = params.get('adstock_theta', 0.3)
+    daily_inflexion = hist_daily * 10 * gamma_norm
+    return (daily_inflexion / (1 + theta)) * DAYS_PER_MONTH
+
+
+def add_reference_vlines(fig, channel_params: dict, channels: list, annotate: bool = True):
+    """Add current spend (dashed) and inflexion point (dotted red) vertical lines."""
+    for channel in channels:
+        params = channel_params[channel]
+        hist_monthly = params.get('total_spend', 0) / 12
+        inflexion_monthly = get_monthly_inflexion(params)
+        label = channel.replace('_', ' ').title()
+
+        # Current spend — dashed grey
+        fig.add_vline(
+            x=hist_monthly, line_dash="dash", line_color=SLATE_500, line_width=1,
+            annotation_text=label if annotate else None,
+            annotation_position="top",
+            annotation_font_size=9,
+            annotation_font_color=SLATE_500,
+        )
+        # Inflexion point — dotted red
+        fig.add_vline(
+            x=inflexion_monthly, line_dash="dot", line_color="#ef4444", line_width=1,
+        )
 
 
 def calculate_saturation_curve(
@@ -286,6 +318,7 @@ def render_all_channels_view(
         title=t('saturation.saturation_curves_title'),
         labels={spend_col: spend_col, revenue_col: revenue_col}
     )
+    add_reference_vlines(fig1, channel_params, channels, annotate=True)
     fig1.update_layout(height=500)
     apply_dark_theme(fig1)
     st.plotly_chart(fig1, use_container_width=True)
@@ -302,6 +335,7 @@ def render_all_channels_view(
             title=t('saturation.roi_curves_title'),
             labels={spend_col: spend_col, t('optimizer.roi'): t('saturation.return_on_investment')}
         )
+        add_reference_vlines(fig2, channel_params, channels, annotate=False)
         fig2.update_layout(height=400)
         apply_dark_theme(fig2)
         st.plotly_chart(fig2, use_container_width=True)
@@ -315,24 +349,13 @@ def render_all_channels_view(
             title=t('saturation.marginal_roi_curves_title'),
             labels={spend_col: spend_col, t('saturation.marginal_roi'): t('saturation.incremental_roi')}
         )
+        add_reference_vlines(fig3, channel_params, channels, annotate=False)
         fig3.update_layout(height=400)
         apply_dark_theme(fig3)
         st.plotly_chart(fig3, use_container_width=True)
 
     # Channel parameters table
     st.header(t('saturation.channel_parameters'))
-
-    def calc_monthly_inflexion(params):
-        """Calculate monthly inflexion point from normalized gamma"""
-        hist_monthly = params.get('total_spend', 0) / 12
-        hist_daily = hist_monthly / DAYS_PER_MONTH
-        gamma_norm = params.get('saturation_gamma', 0.5)
-        theta = params.get('adstock_theta', 0.3)
-        # Daily inflexion using 10x growth potential
-        daily_inflexion = hist_daily * 10 * gamma_norm
-        # Convert to monthly spend that produces this inflexion
-        monthly_inflexion_spend = (daily_inflexion / (1 + theta)) * DAYS_PER_MONTH
-        return monthly_inflexion_spend
 
     params_df = pd.DataFrame([
         {
@@ -341,7 +364,7 @@ def render_all_channels_view(
             t('saturation.adstock'): f"{params.get('adstock_theta', 0):.2f}",
             t('saturation.alpha'): f"{params.get('saturation_alpha', 0):.2f}",
             t('saturation.gamma_norm'): f"{params.get('saturation_gamma', 0):.2f}",
-            t('saturation.inflexion_point'): fmt_currency(calc_monthly_inflexion(params)),
+            t('saturation.inflexion_point'): fmt_currency(get_monthly_inflexion(params)),
             t('optimizer.roi'): f"{params.get('roi', 0):.2f}",
         }
         for ch, params in channel_params.items()
@@ -499,6 +522,17 @@ def render_single_channel_view(
 
     fig.update_xaxes(title_text=revenue_col, row=2, col=2)
     fig.update_yaxes(title_text=t('optimizer.roi'), row=2, col=2)
+
+    # Add current spend and inflexion vertical lines to spend-axis subplots
+    for row, col in [(1, 1), (1, 2), (2, 1)]:
+        fig.add_vline(
+            x=historical_monthly, line_dash="dash", line_color=SLATE_500, line_width=1,
+            row=row, col=col,
+        )
+        fig.add_vline(
+            x=monthly_inflexion, line_dash="dot", line_color="#ef4444", line_width=1,
+            row=row, col=col,
+        )
 
     fig.update_layout(height=800, showlegend=False)
     apply_dark_theme(fig)
