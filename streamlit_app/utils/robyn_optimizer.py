@@ -33,9 +33,9 @@ DEFAULT_CONTEXT_COEFFICIENTS = {
         'baseline': 0
     },
     'fed_funds_rate': {
-        'coefficient': -0.04,  # -4% per 1% rate increase above baseline
+        'coefficient': -0.04,  # -4% per 1% rate increase above 6-month MA baseline
         'effect_type': 'linear',
-        'baseline': 3.58
+        'baseline': 3.84
     },
     'competitor_pressure_index': {
         'coefficient': -0.01,  # -1% per 10 points above baseline
@@ -555,7 +555,7 @@ class RobynOptimizer:
                 coef_info = self.context_coefficients['fed_funds_rate']
                 if coef_info.get('effect_type') == 'linear':
                     value = float(day_row['fed_funds_rate'])
-                    baseline = coef_info.get('baseline', 3.58)
+                    baseline = coef_info.get('baseline', 3.84)
                     coefficient = coef_info.get('coefficient', -0.04)
                     # Effect = 1 + coefficient * (value - baseline)
                     # e.g., rate=8.0, baseline=7.5, coef=-0.04 → 1 + (-0.04)*(0.5) = 0.98
@@ -605,7 +605,7 @@ class RobynOptimizer:
             # Calculate context breakdown
             holiday_days = int(context_data['is_holiday'].sum()) if 'is_holiday' in context_data else 0
             promo_days = int(context_data['is_promotion'].sum()) if 'is_promotion' in context_data else 0
-            avg_fed_rate = float(context_data['fed_funds_rate'].mean()) if 'fed_funds_rate' in context_data else 3.58
+            avg_fed_rate = float(context_data['fed_funds_rate'].mean()) if 'fed_funds_rate' in context_data else 3.84
 
             return {
                 'total_response': total_response,
@@ -623,7 +623,7 @@ class RobynOptimizer:
                 'context_multiplier': 1.0,
                 'holiday_days': 0,
                 'promotion_days': 0,
-                'avg_fed_funds_rate': 3.58,
+                'avg_fed_funds_rate': 3.84,
                 'period_days': period_days
             }
 

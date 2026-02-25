@@ -210,9 +210,9 @@ def main():
         st.metric(
             t('calendar.average_rate'),
             f"{summary['avg_fed_funds_rate']:.2f}%",
-            delta=f"{summary['avg_fed_funds_rate'] - 3.58:.2f}% {t('calendar.vs_baseline')}"
+            delta=f"{summary['avg_fed_funds_rate'] - 3.84:.2f}% {t('calendar.vs_baseline')}"
         )
-        st.caption(f"{t('calendar.target_range')}: 3.50% – 3.75%")
+        st.caption(f"6-month MA baseline: 3.84%")
 
     with col2:
         st.subheader(t('calendar.competitor_pressure'))

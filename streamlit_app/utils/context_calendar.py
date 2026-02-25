@@ -123,7 +123,7 @@ class ContextCalendar:
             'holiday_names': [],
             'n_promotion_days': 3,
             'promotion_names': [],
-            'avg_fed_funds_rate': 3.58,
+            'avg_fed_funds_rate': 3.84,
             'min_fed_funds_rate': 3.50,
             'max_fed_funds_rate': 3.75,
             'avg_competitor_pressure': 50.0,
@@ -148,7 +148,7 @@ class ContextCalendar:
         promotion_multiplier = 1 + (0.3 * promotion_fraction)
 
         # Fed Funds Rate effect: higher rate = lower demand
-        baseline_rate = 3.58
+        baseline_rate = 3.84
         rate_diff = summary['avg_fed_funds_rate'] - baseline_rate
         fed_funds_multiplier = 1 - (0.02 * rate_diff / 0.25)
         fed_funds_multiplier = max(0.8, min(1.2, fed_funds_multiplier))
@@ -185,7 +185,7 @@ class ContextCalendar:
                 'date': dates,
                 'is_holiday': 0,
                 'is_promotion': 0,
-                'fed_funds_rate': 3.58,
+                'fed_funds_rate': 3.84,
                 'competitor_pressure_index': 50,
             })
 

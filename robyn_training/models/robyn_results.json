@@ -156,8 +156,8 @@
     "fed_funds_rate": {
       "coefficient": -0.04,
       "effect_type": "linear",
-      "baseline": 3.58,
-      "description": "-4% per 1% rate increase above baseline"
+      "baseline": 3.84,
+      "description": "-4% per 1% rate increase above 6-month moving average baseline"
     },
     "competitor_pressure_index": {
       "coefficient": -0.001,
