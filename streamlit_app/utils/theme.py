@@ -327,6 +327,7 @@ DATAPROF_CSS = """
     [data-testid="stHeader"] {
         background: transparent !important;
         backdrop-filter: none !important;
+        top: 52px !important;
     }
     [data-testid="stHeader"]::after {
         display: none !important;
