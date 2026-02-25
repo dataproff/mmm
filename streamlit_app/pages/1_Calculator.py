@@ -12,302 +12,24 @@ import plotly.graph_objects as go
 import plotly.express as px
 from typing import Dict
 import calendar
-import base64
 from pathlib import Path
 
 from utils.model_loader import ModelLoader
 from utils.robyn_optimizer import RobynOptimizer
 from utils.context_calendar import ContextCalendar
 from utils.i18n import t, render_language_selector, get_language, get_currency, fmt_currency
+from utils.theme import inject_css, render_header, render_sidebar_nav, apply_dark_theme, DARK_COLORWAY, SLATE_400
 
 # Page configuration
 st.set_page_config(
     page_title="MMM Budget Optimizer | DataProf",
-    page_icon="🧮",
+    page_icon=":material/calculate:",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-
-def get_logo_base64():
-    """Load logo and convert to base64 for embedding"""
-    logo_path = Path(__file__).parent.parent / "web_resources" / "dataprof.png"
-    if logo_path.exists():
-        with open(logo_path, "rb") as f:
-            return base64.b64encode(f.read()).decode()
-    return None
-
-
-# Custom CSS - DataProf style
-DATAPROF_CSS = """
-<style>
-    /* Import Google Fonts */
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-
-    /* Main styling */
-    .stApp {
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-    }
-
-    /* Hide default Streamlit header and footer */
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
-
-    /* Custom header at top */
-    .dataprof-header {
-        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-        padding: 1rem 2rem;
-        margin: -6rem -1rem 1rem -1rem;
-        border-radius: 0 0 20px 20px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-    }
-
-    /* Remove top padding from main content */
-    .main .block-container {
-        padding-top: 0;
-    }
-
-    .dataprof-header-content {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        max-width: 1400px;
-        margin: 0 auto;
-    }
-
-    .dataprof-logo-container {
-        background: white;
-        padding: 8px 16px;
-        border-radius: 8px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
-
-    .dataprof-logo {
-        height: 40px;
-        display: block;
-    }
-
-    .dataprof-title {
-        color: white;
-        font-size: 1.5rem;
-        font-weight: 600;
-        margin: 0;
-    }
-
-    .dataprof-subtitle {
-        color: rgba(255,255,255,0.7);
-        font-size: 0.9rem;
-        margin: 0;
-    }
-
-    /* Card styling */
-    .stMetric {
-        background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
-        padding: 1rem;
-        border-radius: 12px;
-        box-shadow: 0 2px 12px rgba(0,0,0,0.08);
-        border: 1px solid rgba(0,0,0,0.05);
-    }
-
-    /* Prevent metric values from being truncated */
-    [data-testid="stMetricValue"] {
-        font-size: 1.5rem !important;
-        white-space: nowrap !important;
-        overflow: visible !important;
-        text-overflow: unset !important;
-        max-width: none !important;
-    }
-
-    [data-testid="stMetricValue"] > div {
-        white-space: nowrap !important;
-        overflow: visible !important;
-        text-overflow: unset !important;
-    }
-
-    [data-testid="stMetricLabel"] {
-        font-size: 0.8rem !important;
-        white-space: nowrap !important;
-        overflow: visible !important;
-        max-width: none !important;
-    }
-
-    [data-testid="stMetricLabel"] > div {
-        white-space: nowrap !important;
-        overflow: visible !important;
-        text-overflow: unset !important;
-    }
-
-    /* Make metric container not truncate content */
-    [data-testid="stMetric"] > div {
-        overflow: visible !important;
-    }
-
-    [data-testid="stMetric"] > div > div {
-        overflow: visible !important;
-        text-overflow: unset !important;
-    }
-
-    /* Sidebar styling */
-    [data-testid="stSidebar"] {
-        background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
-    }
-
-    /* Navigation links in sidebar - make text white */
-    [data-testid="stSidebar"] a,
-    [data-testid="stSidebar"] a span,
-    [data-testid="stSidebar"] [data-testid="stSidebarNav"] span,
-    [data-testid="stSidebar"] [data-testid="stSidebarNav"] a,
-    [data-testid="stSidebar"] .stPageLink span,
-    [data-testid="stSidebar"] nav span,
-    [data-testid="stSidebar"] nav a {
-        color: white !important;
-    }
-
-    /* Sidebar text - white for labels and markdown */
-    [data-testid="stSidebar"] label,
-    [data-testid="stSidebar"] .stMarkdown,
-    [data-testid="stSidebar"] h1, [data-testid="stSidebar"] h2, [data-testid="stSidebar"] h3,
-    [data-testid="stSidebar"] p,
-    [data-testid="stSidebar"] .stSelectbox label,
-    [data-testid="stSidebar"] .stRadio label {
-        color: white !important;
-    }
-
-    /* Keep selectbox/dropdown text dark on white background */
-    [data-testid="stSidebar"] [data-baseweb="select"] span,
-    [data-testid="stSidebar"] [data-baseweb="select"] input {
-        color: #1a1a2e !important;
-    }
-
-    [data-testid="stSidebar"] hr {
-        border-color: rgba(255,255,255,0.2);
-    }
-
-    /* Sidebar metrics - keep dark background, white text */
-    [data-testid="stSidebar"] [data-testid="stMetric"] {
-        background: rgba(255,255,255,0.1);
-        padding: 0.8rem;
-        border-radius: 8px;
-        border: 1px solid rgba(255,255,255,0.2);
-    }
-
-    [data-testid="stSidebar"] [data-testid="stMetricLabel"],
-    [data-testid="stSidebar"] [data-testid="stMetricValue"],
-    [data-testid="stSidebar"] [data-testid="stMetricDelta"] {
-        color: white !important;
-    }
-
-    [data-testid="stSidebar"] [data-testid="stMetricDelta"] svg {
-        fill: white !important;
-    }
-
-    /* Button styling */
-    .stButton > button {
-        background: linear-gradient(135deg, #e94560 0%, #c73e54 100%);
-        color: white;
-        border: none;
-        border-radius: 8px;
-        padding: 0.6rem 1.5rem;
-        font-weight: 600;
-        transition: all 0.3s ease;
-        box-shadow: 0 4px 15px rgba(233, 69, 96, 0.3);
-    }
-
-    .stButton > button:hover {
-        background: linear-gradient(135deg, #c73e54 0%, #a83245 100%);
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(233, 69, 96, 0.4);
-    }
-
-    /* Section headers */
-    h1, h2, h3 {
-        color: #1a1a2e;
-        font-weight: 600;
-    }
-
-    /* Info boxes */
-    .stAlert {
-        border-radius: 10px;
-        border: none;
-    }
-
-    /* Expander styling */
-    .streamlit-expanderHeader {
-        background: #f8f9fa;
-        border-radius: 8px;
-    }
-
-    /* Metric value */
-    [data-testid="stMetricValue"] {
-        color: #1a1a2e;
-        font-weight: 700;
-    }
-
-    /* Success/Info messages */
-    .stSuccess {
-        background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
-        border-radius: 10px;
-    }
-
-    .stInfo {
-        background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%);
-        border-radius: 10px;
-    }
-
-    /* Chart containers */
-    .js-plotly-plot {
-        border-radius: 12px;
-        box-shadow: 0 2px 12px rgba(0,0,0,0.08);
-    }
-
-    /* DataFrame styling */
-    .dataframe {
-        border-radius: 10px;
-        overflow: hidden;
-    }
-
-    /* Input fields */
-    .stNumberInput input,
-    .stSelectbox select {
-        border-radius: 8px;
-        border: 1px solid #e0e0e0;
-    }
-
-    /* Context info banner */
-    .context-banner {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        padding: 1rem;
-        border-radius: 10px;
-        margin-bottom: 1rem;
-    }
-</style>
-"""
-
-st.markdown(DATAPROF_CSS, unsafe_allow_html=True)
-
-
-def render_header():
-    """Render custom DataProf header"""
-    logo_b64 = get_logo_base64()
-
-    if logo_b64:
-        logo_html = f'<div class="dataprof-logo-container"><img src="data:image/png;base64,{logo_b64}" class="dataprof-logo" alt="DataProf"></div>'
-    else:
-        logo_html = '<span style="color: white; font-size: 1.5rem; font-weight: bold;">DataProf</span>'
-
-    st.markdown(f"""
-    <div class="dataprof-header">
-        <div class="dataprof-header-content">
-            {logo_html}
-            <div style="text-align: right;">
-                <p class="dataprof-title">{t('app.title')}</p>
-                <p class="dataprof-subtitle">{t('app.subtitle')}</p>
-            </div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+inject_css()
+render_sidebar_nav("Budget Optimizer")
 
 
 def get_model_file_hash():
@@ -366,9 +88,10 @@ def create_allocation_chart(allocation: Dict[str, float], title: str = None):
             text=t('charts.no_budget'),
             xref="paper", yref="paper",
             x=0.5, y=0.5, showarrow=False,
-            font=dict(size=16)
+            font=dict(size=16, color=SLATE_400)
         )
         fig.update_layout(title=title, height=400)
+        apply_dark_theme(fig)
         return fig
 
     fig = go.Figure(data=[go.Pie(
@@ -377,6 +100,7 @@ def create_allocation_chart(allocation: Dict[str, float], title: str = None):
         hole=0.3,
         textposition='inside',
         textinfo='label+percent',
+        marker=dict(colors=DARK_COLORWAY[:len(filtered_allocation)]),
     )])
 
     fig.update_layout(
@@ -384,6 +108,7 @@ def create_allocation_chart(allocation: Dict[str, float], title: str = None):
         showlegend=True,
         height=400,
     )
+    apply_dark_theme(fig)
 
     return fig
 
@@ -443,7 +168,7 @@ def main():
     # Show optimizer method in sidebar (silently use best available method)
 
     # Sidebar - Month Selection
-    st.sidebar.title(f"📅 {t('sidebar.planning_period')}")
+    st.sidebar.title(t('sidebar.planning_period'))
     available_months = context_calendar.get_available_months()
 
     if available_months:
@@ -481,7 +206,7 @@ def main():
         - **{t('sidebar.days')}:** {month_summary['n_days']}
         - **{t('sidebar.holidays')}:** {month_summary['n_holidays']}
         - **{t('sidebar.promotion_days')}:** {month_summary['n_promotion_days']}
-        - **{t('sidebar.avg_refi_rate')}:** {month_summary['avg_refinancing_rate']:.2f}%
+        - **{t('sidebar.avg_fed_rate')}:** {month_summary['avg_fed_funds_rate']:.2f}%
         """)
 
         # Show impact multiplier
@@ -496,7 +221,7 @@ def main():
         # Default values if no calendar
         selected_year = 2026
         selected_month = 1
-        context_multipliers = {'combined_multiplier': 1.0, 'crm_contribution': 0}
+        context_multipliers = {'combined_multiplier': 1.0}
         month_summary = {'n_days': 31}
         st.sidebar.warning(t('sidebar.no_calendar'))
 
@@ -507,9 +232,9 @@ def main():
     use_case = st.sidebar.radio(
         t('sidebar.select_scenario'),
         [
-            f"1️⃣ {t('use_cases.budget_for_target')}",
-            f"2️⃣ {t('use_cases.maximize_revenue')}",
-            f"3️⃣ {t('use_cases.scenario_analysis')}"
+            t('use_cases.budget_for_target'),
+            t('use_cases.maximize_revenue'),
+            t('use_cases.scenario_analysis')
         ]
     )
 
@@ -523,7 +248,7 @@ def main():
 
     # Debug: Show if baseline is missing
     if not baseline_info:
-        st.sidebar.warning("⚠️ Baseline data not found in model. Please retrain the model or check robyn_results.json")
+        st.sidebar.warning("Baseline data not found in model. Please retrain the model or check robyn_results.json")
 
     st.sidebar.info(f"""
     **{t('sidebar.training_date')}:** {results.get('training_date', 'N/A')[:10]}
@@ -534,10 +259,10 @@ def main():
     # Show baseline revenue
     if baseline_info:
         st.sidebar.metric(
-            "📊 Baseline (organic)",
+            "Baseline (organic)",
             fmt_currency(baseline_monthly),
             delta=f"{baseline_pct:.1f}% of total",
-            help="Monthly revenue without paid advertising (organic traffic, brand, CRM)"
+            help="Monthly revenue without paid advertising (organic traffic, brand)"
         )
 
     # Control variables info
@@ -547,10 +272,10 @@ def main():
         st.sidebar.markdown(f"**{t('sidebar.included_in_model')}**")
         for var in control_vars:
             var_display = var.replace('_', ' ').title()
-            if 'refinancing' in var.lower():
+            if 'fed_funds' in var.lower():
                 st.sidebar.markdown(f"- {var_display} ({t('sidebar.macro')})")
-            elif 'email' in var.lower() or 'push' in var.lower():
-                st.sidebar.markdown(f"- {var_display} ({t('sidebar.crm')})")
+            elif 'competitor' in var.lower():
+                st.sidebar.markdown(f"- {var_display} ({t('sidebar.macro')})")
             else:
                 st.sidebar.markdown(f"- {var_display}")
 
@@ -582,7 +307,7 @@ def main():
 def render_target_leads_optimizer(optimizer: RobynOptimizer, channel_params: Dict, context_info: Dict):
     """Use Case 1: Find optimal budget to achieve target leads"""
 
-    st.header(f"1️⃣ {t('use_cases.budget_for_target')} - {context_info['month_name']}")
+    st.header(f"{t('use_cases.budget_for_target')} — {context_info['month_name']}")
 
     # Calculate historical monthly contribution for reference
     hist_monthly_revenue = sum(p.get('contribution', 0) for p in channel_params.values()) / 12
@@ -595,13 +320,13 @@ def render_target_leads_optimizer(optimizer: RobynOptimizer, channel_params: Dic
     with col1:
         st.subheader(t('optimizer.inputs'))
 
-        st.info(f"📊 {t('optimizer.historical_monthly_revenue')}: **{fmt_currency(hist_monthly_revenue)}**")
+        st.info(f"{t('optimizer.historical_monthly_revenue')}: **{fmt_currency(hist_monthly_revenue)}**")
 
         # Show context info
         n_holidays = context_info['summary'].get('n_holidays', 0)
         n_promos = context_info['summary'].get('n_promotion_days', 0)
         if n_holidays > 0 or n_promos > 0:
-            st.success(f"📅 {context_info['month_name']}: {n_holidays} {t('sidebar.holidays').lower()}, {n_promos} {t('sidebar.promotion_days').lower()}")
+            st.success(f"{context_info['month_name']}: {n_holidays} {t('sidebar.holidays').lower()}, {n_promos} {t('sidebar.promotion_days').lower()}")
 
         # Target leads input
         target_leads = st.number_input(
@@ -613,7 +338,7 @@ def render_target_leads_optimizer(optimizer: RobynOptimizer, channel_params: Dic
 
         # Channel constraints (optional)
         st.markdown(f"### {t('optimizer.channel_constraints', days=context_info['n_days'])}")
-        st.caption(f"💡 {t('optimizer.constraints_hint')}")
+        st.caption(t('optimizer.constraints_hint'))
         budget_constraints = {}
 
         # Default constraint values (only applied when enabled)
@@ -621,7 +346,7 @@ def render_target_leads_optimizer(optimizer: RobynOptimizer, channel_params: Dic
         default_max_target = 500000.0  # Maximum monthly spend per channel
 
         for channel in channel_params.keys():
-            with st.expander(f"📺 {channel.replace('_', ' ').title()}"):
+            with st.expander(channel.replace('_', ' ').title()):
                 # Checkbox to enable/disable constraint for this channel
                 enabled = st.checkbox(
                     t('optimizer.enable_constraint'),
@@ -650,7 +375,7 @@ def render_target_leads_optimizer(optimizer: RobynOptimizer, channel_params: Dic
                     st.caption(t('optimizer.no_constraints'))
 
         # Optimize button
-        if st.button(f"🚀 {t('optimizer.optimize')}", type="primary", use_container_width=True):
+        if st.button(t('optimizer.optimize'), type="primary", use_container_width=True, icon=":material/rocket_launch:"):
             with st.spinner(t('optimizer.optimizing')):
                 # Pass context data directly to optimizer
                 result = optimizer.optimize_for_target(
@@ -664,7 +389,6 @@ def render_target_leads_optimizer(optimizer: RobynOptimizer, channel_params: Dic
                     ctx_details = optimizer.predict_with_context(result['allocation'], context_df)
                     result['base_response'] = ctx_details['base_response']
                     result['context_multiplier'] = ctx_details['context_multiplier']
-                    result['crm_contribution'] = ctx_details['crm_contribution']
                 st.session_state['optimization_result'] = result
 
     with col2:
@@ -675,8 +399,8 @@ def render_target_leads_optimizer(optimizer: RobynOptimizer, channel_params: Dic
 
             # Show warning if target not achievable
             if not result.get('success', True) and 'message' in result:
-                st.warning(f"⚠️ {result['message']}")
-                st.info(f"💡 {t('optimizer.warning_target')}")
+                st.warning(result['message'])
+                st.info(t('optimizer.warning_target'))
 
             # Metrics with baseline
             baseline = context_info.get('baseline_monthly', 0)
@@ -692,18 +416,17 @@ def render_target_leads_optimizer(optimizer: RobynOptimizer, channel_params: Dic
             # Achievement
             achievement_pct = (total_revenue/result['target_leads']*100) if result['target_leads'] > 0 else 0
             if achievement_pct < 95:
-                st.warning(f"⚠️ Target achievement: {achievement_pct:.1f}% - {t('optimizer.target_not_achievable')}")
+                st.warning(f"Target achievement: {achievement_pct:.1f}% — {t('optimizer.target_not_achievable')}")
 
             # Show revenue breakdown
             c = get_currency()
-            st.caption(f"💡 Total Revenue = {c}{baseline:,.0f} (baseline) + {c}{paid_media_revenue:,.0f} (paid media) = {c}{total_revenue:,.0f}")
+            st.caption(f"Total Revenue = {c}{baseline:,.0f} (baseline) + {c}{paid_media_revenue:,.0f} (paid media) = {c}{total_revenue:,.0f}")
 
             # Show context breakdown if applicable
-            if result.get('context_multiplier', 1.0) != 1.0 or result.get('crm_contribution', 0) > 0:
+            if result.get('context_multiplier', 1.0) != 1.0:
                 base = result.get('base_response', paid_media_revenue)
                 mult = result.get('context_multiplier', 1.0)
-                crm = result.get('crm_contribution', 0)
-                st.caption(f"Context adjustment: {c}{base:,.0f} × {mult:.2f} + {c}{crm:,.0f} CRM = {c}{paid_media_revenue:,.0f}")
+                st.caption(f"Context adjustment: {c}{base:,.0f} × {mult:.2f} = {c}{paid_media_revenue:,.0f}")
 
             # Allocation chart
             st.plotly_chart(
@@ -723,7 +446,7 @@ def render_target_leads_optimizer(optimizer: RobynOptimizer, channel_params: Dic
 def render_budget_optimizer(optimizer: RobynOptimizer, channel_params: Dict, context_info: Dict):
     """Use Case 2: Maximize leads for given budget"""
 
-    st.header(f"2️⃣ {t('use_cases.maximize_revenue')} - {context_info['month_name']}")
+    st.header(f"{t('use_cases.maximize_revenue')} — {context_info['month_name']}")
 
     # Calculate historical monthly spend for reference
     hist_monthly_spend = sum(p.get('total_spend', 0) for p in channel_params.values()) / 12
@@ -736,13 +459,13 @@ def render_budget_optimizer(optimizer: RobynOptimizer, channel_params: Dict, con
     with col1:
         st.subheader(t('optimizer.inputs'))
 
-        st.info(f"📊 {t('optimizer.historical_monthly_spend')}: **{fmt_currency(hist_monthly_spend)}**")
+        st.info(f"{t('optimizer.historical_monthly_spend')}: **{fmt_currency(hist_monthly_spend)}**")
 
         # Show context info
         n_holidays = context_info['summary'].get('n_holidays', 0)
         n_promos = context_info['summary'].get('n_promotion_days', 0)
         if n_holidays > 0 or n_promos > 0:
-            st.success(f"📅 {context_info['month_name']}: {n_holidays} {t('sidebar.holidays').lower()}, {n_promos} {t('sidebar.promotion_days').lower()}")
+            st.success(f"{context_info['month_name']}: {n_holidays} {t('sidebar.holidays').lower()}, {n_promos} {t('sidebar.promotion_days').lower()}")
 
         # Total budget input
         total_budget = st.number_input(
@@ -754,7 +477,7 @@ def render_budget_optimizer(optimizer: RobynOptimizer, channel_params: Dict, con
 
         # Channel constraints (optional)
         st.markdown(f"### {t('optimizer.channel_constraints', days=context_info['n_days'])}")
-        st.caption(f"💡 {t('optimizer.constraints_hint')}")
+        st.caption(t('optimizer.constraints_hint'))
 
         n_channels = len(channel_params)
         default_min = total_budget * 0.05  # 5% minimum per channel
@@ -763,7 +486,7 @@ def render_budget_optimizer(optimizer: RobynOptimizer, channel_params: Dict, con
         budget_constraints = {}
 
         for channel in channel_params.keys():
-            with st.expander(f"📺 {channel.replace('_', ' ').title()}"):
+            with st.expander(channel.replace('_', ' ').title()):
                 # Checkbox to enable/disable constraint for this channel
                 enabled = st.checkbox(
                     t('optimizer.enable_constraint'),
@@ -792,7 +515,7 @@ def render_budget_optimizer(optimizer: RobynOptimizer, channel_params: Dict, con
                     st.caption(t('optimizer.no_constraints_allocation'))
 
         # Optimize button
-        if st.button(f"🚀 {t('optimizer.optimize')}", type="primary", use_container_width=True):
+        if st.button(t('optimizer.optimize'), type="primary", use_container_width=True, icon=":material/rocket_launch:"):
             with st.spinner(t('optimizer.optimizing')):
                 # Only apply constraints for channels that have them enabled
                 # For channels without constraints, optimizer finds optimal allocation freely
@@ -813,7 +536,6 @@ def render_budget_optimizer(optimizer: RobynOptimizer, channel_params: Dict, con
                     ctx_details = optimizer.predict_with_context(result['allocation'], context_df)
                     result['base_response'] = ctx_details['base_response']
                     result['context_multiplier'] = ctx_details['context_multiplier']
-                    result['crm_contribution'] = ctx_details['crm_contribution']
                 result['roi'] = result['predicted_leads'] / total_budget if total_budget > 0 else 0
                 st.session_state['budget_optimization_result'] = result
 
@@ -837,14 +559,13 @@ def render_budget_optimizer(optimizer: RobynOptimizer, channel_params: Dict, con
 
             # Show revenue breakdown
             c = get_currency()
-            st.caption(f"💡 Total Revenue = {c}{baseline:,.0f} (baseline) + {c}{paid_media_revenue:,.0f} (paid media) = {c}{total_revenue:,.0f}")
+            st.caption(f"Total Revenue = {c}{baseline:,.0f} (baseline) + {c}{paid_media_revenue:,.0f} (paid media) = {c}{total_revenue:,.0f}")
 
             # Show context breakdown if applicable
-            if result.get('context_multiplier', 1.0) != 1.0 or result.get('crm_contribution', 0) > 0:
+            if result.get('context_multiplier', 1.0) != 1.0:
                 base = result.get('base_response', paid_media_revenue)
                 mult = result.get('context_multiplier', 1.0)
-                crm = result.get('crm_contribution', 0)
-                st.caption(f"Context adjustment: {c}{base:,.0f} × {mult:.2f} + {c}{crm:,.0f} CRM = {c}{paid_media_revenue:,.0f}")
+                st.caption(f"Context adjustment: {c}{base:,.0f} × {mult:.2f} = {c}{paid_media_revenue:,.0f}")
 
             # Allocation chart
             st.plotly_chart(
@@ -864,7 +585,7 @@ def render_budget_optimizer(optimizer: RobynOptimizer, channel_params: Dict, con
 def render_scenario_analysis(optimizer: RobynOptimizer, channel_params: Dict, context_info: Dict):
     """Use Case 3: Scenario analysis across budget ranges"""
 
-    st.header(f"3️⃣ {t('use_cases.scenario_analysis')} - {context_info['month_name']}")
+    st.header(f"{t('use_cases.scenario_analysis')} — {context_info['month_name']}")
 
     # Calculate historical monthly spend for reference
     hist_monthly_spend = sum(p.get('total_spend', 0) for p in channel_params.values()) / 12
@@ -877,15 +598,15 @@ def render_scenario_analysis(optimizer: RobynOptimizer, channel_params: Dict, co
     with col1:
         st.subheader(t('scenario.settings'))
 
-        st.info(f"📊 {t('optimizer.historical_monthly_spend')}: **{fmt_currency(hist_monthly_spend)}**")
+        st.info(f"{t('optimizer.historical_monthly_spend')}: **{fmt_currency(hist_monthly_spend)}**")
 
         # Show context info
         n_holidays = context_info['summary'].get('n_holidays', 0)
         n_promos = context_info['summary'].get('n_promotion_days', 0)
         if n_holidays > 0 or n_promos > 0:
-            st.success(f"📅 {context_info['month_name']}: {n_holidays} {t('sidebar.holidays').lower()}, {n_promos} {t('sidebar.promotion_days').lower()}")
+            st.success(f"{context_info['month_name']}: {n_holidays} {t('sidebar.holidays').lower()}, {n_promos} {t('sidebar.promotion_days').lower()}")
 
-        st.caption(f"💡 {t('scenario.hint')}")
+        st.caption(t('scenario.hint'))
 
         # Budget range
         min_budget = st.number_input(
@@ -911,7 +632,7 @@ def render_scenario_analysis(optimizer: RobynOptimizer, channel_params: Dict, co
         )
 
         # Run analysis button
-        if st.button(f"📈 {t('scenario.run_analysis')}", type="primary", use_container_width=True):
+        if st.button(t('scenario.run_analysis'), type="primary", use_container_width=True, icon=":material/trending_up:"):
             with st.spinner(t('scenario.running')):
                 # Pass context data directly to scenario analysis
                 scenarios = optimizer.scenario_analysis(
@@ -924,10 +645,8 @@ def render_scenario_analysis(optimizer: RobynOptimizer, channel_params: Dict, co
                 if context_df is not None and not context_df.empty and scenarios:
                     ctx_details = optimizer.predict_with_context(scenarios[0]['allocation'], context_df)
                     context_mult = ctx_details['context_multiplier']
-                    crm_contribution = ctx_details['crm_contribution']
                 else:
                     context_mult = 1.0
-                    crm_contribution = 0
 
                 # Add baseline and calculate total revenue/ROI
                 baseline = context_info.get('baseline_monthly', 0)
@@ -940,7 +659,6 @@ def render_scenario_analysis(optimizer: RobynOptimizer, channel_params: Dict, co
                 st.session_state['scenarios_context'] = {
                     'month_name': context_info['month_name'],
                     'context_mult': context_mult,
-                    'crm_contribution': crm_contribution,
                     'baseline': baseline
                 }
 
@@ -980,6 +698,7 @@ def render_scenario_analysis(optimizer: RobynOptimizer, channel_params: Dict, co
                 xaxis_title=t('scenario.budget_axis', currency=c),
                 yaxis_title=t('scenario.revenue_axis', currency=c)
             )
+            apply_dark_theme(fig1)
             st.plotly_chart(fig1, use_container_width=True)
 
             # ROI curve
@@ -995,14 +714,15 @@ def render_scenario_analysis(optimizer: RobynOptimizer, channel_params: Dict, co
                 xaxis_title=t('scenario.budget_axis', currency=c),
                 yaxis_title=t('scenario.roi_axis')
             )
+            apply_dark_theme(fig2)
             st.plotly_chart(fig2, use_container_width=True)
 
             # Show baseline info
-            st.info(f"💡 All scenarios include baseline revenue of {c}{baseline:,.0f}/month (organic traffic, brand, CRM)")
+            st.info(f"All scenarios include baseline revenue of {c}{baseline:,.0f}/month (organic traffic, brand)")
 
             # Show context adjustment info
-            if scenario_context.get('context_mult', 1.0) != 1.0 or scenario_context.get('crm_contribution', 0) > 0:
-                st.caption(t('scenario.context_note', mult=scenario_context.get('context_mult', 1), crm=scenario_context.get('crm_contribution', 0), currency=c))
+            if scenario_context.get('context_mult', 1.0) != 1.0:
+                st.caption(f"Context multiplier: ×{scenario_context.get('context_mult', 1):.2f}")
 
             # Scenario table
             st.subheader(t('scenario.details'))

@@ -138,7 +138,7 @@ def render_language_selector(location: str = "sidebar") -> None:
     container = st.sidebar if location == "sidebar" else st
 
     selected_lang = container.selectbox(
-        "🌐 " + t("sidebar.language"),
+        t("sidebar.language"),
         options=lang_codes,
         format_func=lambda x: LANGUAGES[x],
         index=current_index,

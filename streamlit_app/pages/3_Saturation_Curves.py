@@ -13,142 +13,29 @@ from plotly.subplots import make_subplots
 
 import sys
 from pathlib import Path
-import base64
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from utils.model_loader import ModelLoader
 from utils.i18n import t, render_language_selector, get_currency, fmt_currency
+from utils.theme import (
+    inject_css, render_header, render_sidebar_nav, apply_dark_theme,
+    INDIGO_500, EMERALD_400, SLATE_200,
+)
 
 # Page configuration
 st.set_page_config(
     page_title="Saturation Curves | DataProf MMM",
-    page_icon="📈",
-    layout="wide"
+    page_icon=":material/show_chart:",
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
 
-# DataProf CSS
-DATAPROF_CSS = """
-<style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-    .stApp { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
-
-    .dataprof-header {
-        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-        padding: 1rem 2rem;
-        margin: -6rem -1rem 1rem -1rem;
-        border-radius: 0 0 20px 20px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-    }
-    .main .block-container {
-        padding-top: 0;
-    }
-    .dataprof-header-content {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        max-width: 1400px;
-        margin: 0 auto;
-    }
-    .dataprof-logo-container {
-        background: white;
-        padding: 8px 16px;
-        border-radius: 8px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
-    .dataprof-logo { height: 40px; display: block; }
-    .dataprof-title { color: white; font-size: 1.5rem; font-weight: 600; margin: 0; }
-    .dataprof-subtitle { color: rgba(255,255,255,0.7); font-size: 0.9rem; margin: 0; }
-
-    [data-testid="stSidebar"] { background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%); }
-
-    /* Navigation links in sidebar - make text white */
-    [data-testid="stSidebar"] a,
-    [data-testid="stSidebar"] a span,
-    [data-testid="stSidebar"] [data-testid="stSidebarNav"] span,
-    [data-testid="stSidebar"] [data-testid="stSidebarNav"] a,
-    [data-testid="stSidebar"] .stPageLink span,
-    [data-testid="stSidebar"] nav span,
-    [data-testid="stSidebar"] nav a { color: white !important; }
-
-    [data-testid="stSidebar"] label,
-    [data-testid="stSidebar"] .stMarkdown,
-    [data-testid="stSidebar"] h1, [data-testid="stSidebar"] h2, [data-testid="stSidebar"] h3,
-    [data-testid="stSidebar"] p { color: white !important; }
-
-    /* Keep selectbox text dark on white background */
-    [data-testid="stSidebar"] [data-baseweb="select"] span { color: #1a1a2e !important; }
-
-    .stButton > button {
-        background: linear-gradient(135deg, #e94560 0%, #c73e54 100%);
-        color: white; border: none; border-radius: 8px;
-        padding: 0.6rem 1.5rem; font-weight: 600;
-        box-shadow: 0 4px 15px rgba(233, 69, 96, 0.3);
-    }
-    h1, h2, h3 { color: #1a1a2e; font-weight: 600; }
-
-    /* Prevent metric values from being truncated */
-    [data-testid="stMetricValue"] {
-        font-size: 1.5rem !important;
-        white-space: nowrap !important;
-        overflow: visible !important;
-        text-overflow: unset !important;
-        max-width: none !important;
-    }
-    [data-testid="stMetricValue"] > div {
-        white-space: nowrap !important;
-        overflow: visible !important;
-        text-overflow: unset !important;
-    }
-    [data-testid="stMetricLabel"] {
-        font-size: 0.8rem !important;
-        white-space: nowrap !important;
-        overflow: visible !important;
-        max-width: none !important;
-    }
-    [data-testid="stMetricLabel"] > div {
-        white-space: nowrap !important;
-        overflow: visible !important;
-        text-overflow: unset !important;
-    }
-    [data-testid="stMetric"] > div,
-    [data-testid="stMetric"] > div > div {
-        overflow: visible !important;
-        text-overflow: unset !important;
-    }
-</style>
-"""
-st.markdown(DATAPROF_CSS, unsafe_allow_html=True)
+inject_css()
+render_sidebar_nav("Saturation Curves")
 
 
-def get_logo_base64():
-    logo_path = Path(__file__).parent.parent / "web_resources" / "dataprof.png"
-    if logo_path.exists():
-        with open(logo_path, "rb") as f:
-            return base64.b64encode(f.read()).decode()
-    return None
-
-
-def render_header():
-    logo_b64 = get_logo_base64()
-    if logo_b64:
-        logo_html = f'<div class="dataprof-logo-container"><img src="data:image/png;base64,{logo_b64}" class="dataprof-logo" alt="DataProf"></div>'
-    else:
-        logo_html = '<span style="color: white; font-size: 1.5rem; font-weight: bold;">DataProf</span>'
-
-    st.markdown(f"""
-    <div class="dataprof-header">
-        <div class="dataprof-header-content">
-            {logo_html}
-            <div style="text-align: right;">
-                <p class="dataprof-title">{t('saturation.title')}</p>
-                <p class="dataprof-subtitle">{t('app.subtitle')}</p>
-            </div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+def render_page_header():
+    render_header('saturation.title', 'app.subtitle')
 
 
 @st.cache_resource
@@ -262,7 +149,7 @@ def calculate_saturation_curve(
 
 
 def main():
-    render_header()
+    render_page_header()
 
     # Language selector
     render_language_selector()
@@ -290,10 +177,10 @@ def main():
     if baseline_info:
         c = get_currency()
         st.info(f"""
-        💡 **Note**: These curves show **paid media response only** for each channel.
+        **Note**: These curves show **paid media response only** for each channel.
 
         Total revenue also includes baseline (organic) of {c}{baseline_monthly:,.0f}/month
-        from brand strength, organic traffic, and CRM activities.
+        from brand strength and organic traffic.
         """)
 
     # Sidebar controls
@@ -400,6 +287,7 @@ def render_all_channels_view(
         labels={spend_col: spend_col, revenue_col: revenue_col}
     )
     fig1.update_layout(height=500)
+    apply_dark_theme(fig1)
     st.plotly_chart(fig1, use_container_width=True)
 
     # ROI curves
@@ -415,6 +303,7 @@ def render_all_channels_view(
             labels={spend_col: spend_col, t('optimizer.roi'): t('saturation.return_on_investment')}
         )
         fig2.update_layout(height=400)
+        apply_dark_theme(fig2)
         st.plotly_chart(fig2, use_container_width=True)
 
     with col2:
@@ -427,6 +316,7 @@ def render_all_channels_view(
             labels={spend_col: spend_col, t('saturation.marginal_roi'): t('saturation.incremental_roi')}
         )
         fig3.update_layout(height=400)
+        apply_dark_theme(fig3)
         st.plotly_chart(fig3, use_container_width=True)
 
     # Channel parameters table
@@ -477,7 +367,7 @@ def render_single_channel_view(
     params = channel_params[selected_channel]
 
     # Channel info
-    st.header(f"📺 {selected_channel.replace('_', ' ').title()}")
+    st.header(selected_channel.replace('_', ' ').title())
 
     col1, col2, col3, col4 = st.columns(4)
     historical_monthly = params.get('total_spend', 0) / 12
@@ -521,15 +411,12 @@ def render_single_channel_view(
             y=responses,
             mode='lines',
             name='Response',
-            line=dict(color='#1f77b4', width=2)
+            line=dict(color=INDIGO_500, width=2)
         ),
         row=1, col=1
     )
 
     # Mark inflection point (gamma)
-    # At inflexion point, saturation = 0.5 (50%)
-    # monthly_inflexion was already calculated above
-    # Calculate the response at inflection point (50% of max_response)
     alpha = params.get('saturation_alpha', 2.0)
     roi = params.get('roi', 2.0)
 
@@ -554,7 +441,7 @@ def render_single_channel_view(
             y=[monthly_response_at_inflexion],
             mode='markers',
             name='Inflection Point',
-            marker=dict(color='red', size=10, symbol='diamond')
+            marker=dict(color='#ef4444', size=10, symbol='diamond')
         ),
         row=1, col=1
     )
@@ -566,7 +453,7 @@ def render_single_channel_view(
             y=rois,
             mode='lines',
             name='ROI',
-            line=dict(color='#2ca02c', width=2)
+            line=dict(color=EMERALD_400, width=2)
         ),
         row=1, col=2
     )
@@ -578,7 +465,7 @@ def render_single_channel_view(
             y=marginal_rois,
             mode='lines',
             name='Marginal ROI',
-            line=dict(color='#ff7f0e', width=2)
+            line=dict(color='#f59e0b', width=2)
         ),
         row=2, col=1
     )
@@ -590,7 +477,7 @@ def render_single_channel_view(
             y=rois,
             mode='lines+markers',
             name='Trade-off',
-            line=dict(color='#9467bd', width=2),
+            line=dict(color='#a78bfa', width=2),
             marker=dict(size=4)
         ),
         row=2, col=2
@@ -614,6 +501,7 @@ def render_single_channel_view(
     fig.update_yaxes(title_text=t('optimizer.roi'), row=2, col=2)
 
     fig.update_layout(height=800, showlegend=False)
+    apply_dark_theme(fig)
 
     st.plotly_chart(fig, use_container_width=True)
 

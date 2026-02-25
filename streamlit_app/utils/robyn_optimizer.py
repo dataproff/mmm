@@ -4,7 +4,7 @@ Robyn-based budget optimizer that uses the trained MMM model
 This wrapper uses the pickled Robyn model for optimization when available,
 falling back to the manual Hill curve implementation otherwise.
 
-Supports context variables (holidays, promotions, refinancing rate, CRM metrics)
+Supports context variables (holidays, promotions, Federal Funds Rate, competitor pressure)
 for more accurate predictions.
 """
 import json
@@ -32,26 +32,15 @@ DEFAULT_CONTEXT_COEFFICIENTS = {
         'effect_type': 'multiplicative',
         'baseline': 0
     },
-    'refinancing_rate': {
+    'fed_funds_rate': {
         'coefficient': -0.04,  # -4% per 1% rate increase above baseline
         'effect_type': 'linear',
-        'baseline': 7.5
+        'baseline': 3.58
     },
-    'email_clicks': {
-        'coefficient': 2.5,  # $2.5 revenue per email click
-        'effect_type': 'additive'
-    },
-    'push_clicks': {
-        'coefficient': 1.5,  # $1.5 revenue per push click
-        'effect_type': 'additive'
-    },
-    'email_sends': {
-        'coefficient': 0.0,  # Sends captured through clicks
-        'effect_type': 'additive'
-    },
-    'push_sends': {
-        'coefficient': 0.0,  # Sends captured through clicks
-        'effect_type': 'additive'
+    'competitor_pressure_index': {
+        'coefficient': -0.01,  # -1% per 10 points above baseline
+        'effect_type': 'linear',
+        'baseline': 50.0
     }
 }
 
@@ -414,9 +403,7 @@ class RobynOptimizer:
 
         Context variables are integrated as:
         - Multiplicative effects (is_holiday, is_promotion): applied per-day
-        - Linear effects (refinancing_rate): continuous adjustment
-        - Additive effects (email_clicks, push_clicks): direct contribution
-
+        - Linear effects (fed_funds_rate): continuous adjustment
         Args:
             spend_allocation: Dict mapping channel to period budget
             period_days: Number of days in the period (default 30 for monthly)
@@ -523,8 +510,8 @@ class RobynOptimizer:
 
         Processes daily context data and applies:
         - Multiplicative effects: holiday/promotion boosts
-        - Linear effects: refinancing rate adjustment
-        - Additive effects: CRM contribution
+        - Linear effects: Federal Funds Rate adjustment
+        - Linear effects: competitor pressure adjustment
 
         Args:
             base_response: Base marketing response from Hill curves
@@ -541,7 +528,6 @@ class RobynOptimizer:
         daily_base = base_response / n_days
 
         total_response = 0
-        total_additive = 0
 
         for _, day_row in context_data.iterrows():
             # Start with daily base
@@ -559,12 +545,12 @@ class RobynOptimizer:
                         multiplier = 1 + (coefficient * value)
                         day_response *= multiplier
 
-            # Apply linear effects (refinancing rate)
-            if 'refinancing_rate' in self.context_coefficients and 'refinancing_rate' in day_row:
-                coef_info = self.context_coefficients['refinancing_rate']
+            # Apply linear effects (Federal Funds Rate)
+            if 'fed_funds_rate' in self.context_coefficients and 'fed_funds_rate' in day_row:
+                coef_info = self.context_coefficients['fed_funds_rate']
                 if coef_info.get('effect_type') == 'linear':
-                    value = float(day_row['refinancing_rate'])
-                    baseline = coef_info.get('baseline', 7.5)
+                    value = float(day_row['fed_funds_rate'])
+                    baseline = coef_info.get('baseline', 3.58)
                     coefficient = coef_info.get('coefficient', -0.04)
                     # Effect = 1 + coefficient * (value - baseline)
                     # e.g., rate=8.0, baseline=7.5, coef=-0.04 → 1 + (-0.04)*(0.5) = 0.98
@@ -572,18 +558,20 @@ class RobynOptimizer:
                     effect = max(0.7, min(1.3, effect))  # Clamp to reasonable range
                     day_response *= effect
 
+            # Apply linear effects (competitor pressure)
+            if 'competitor_pressure_index' in self.context_coefficients and 'competitor_pressure_index' in day_row:
+                coef_info = self.context_coefficients['competitor_pressure_index']
+                if coef_info.get('effect_type') == 'linear':
+                    value = float(day_row['competitor_pressure_index'])
+                    baseline = coef_info.get('baseline', 50.0)
+                    coefficient = coef_info.get('coefficient', -0.01)
+                    effect = 1 + (coefficient * (value - baseline))
+                    effect = max(0.7, min(1.3, effect))
+                    day_response *= effect
+
             total_response += day_response
 
-            # Calculate additive effects (CRM)
-            for var in ['email_clicks', 'push_clicks', 'email_sends', 'push_sends']:
-                if var in self.context_coefficients and var in day_row:
-                    coef_info = self.context_coefficients[var]
-                    if coef_info.get('effect_type') == 'additive':
-                        value = float(day_row[var])
-                        coefficient = coef_info.get('coefficient', 0)
-                        total_additive += value * coefficient
-
-        return total_response + total_additive
+        return total_response
 
     def predict_with_context(
         self,
@@ -612,23 +600,15 @@ class RobynOptimizer:
             # Calculate context breakdown
             holiday_days = int(context_data['is_holiday'].sum()) if 'is_holiday' in context_data else 0
             promo_days = int(context_data['is_promotion'].sum()) if 'is_promotion' in context_data else 0
-            avg_refi_rate = float(context_data['refinancing_rate'].mean()) if 'refinancing_rate' in context_data else 7.5
-
-            # Calculate additive CRM contribution
-            crm_contribution = 0
-            for var in ['email_clicks', 'push_clicks']:
-                if var in self.context_coefficients and var in context_data:
-                    coef = self.context_coefficients[var].get('coefficient', 0)
-                    crm_contribution += float(context_data[var].sum()) * coef
+            avg_fed_rate = float(context_data['fed_funds_rate'].mean()) if 'fed_funds_rate' in context_data else 3.58
 
             return {
                 'total_response': total_response,
                 'base_response': base_response,
-                'context_multiplier': (total_response - crm_contribution) / base_response if base_response > 0 else 1.0,
-                'crm_contribution': crm_contribution,
+                'context_multiplier': total_response / base_response if base_response > 0 else 1.0,
                 'holiday_days': holiday_days,
                 'promotion_days': promo_days,
-                'avg_refinancing_rate': avg_refi_rate,
+                'avg_fed_funds_rate': avg_fed_rate,
                 'period_days': period_days
             }
         else:
@@ -636,10 +616,9 @@ class RobynOptimizer:
                 'total_response': base_response,
                 'base_response': base_response,
                 'context_multiplier': 1.0,
-                'crm_contribution': 0,
                 'holiday_days': 0,
                 'promotion_days': 0,
-                'avg_refinancing_rate': 7.5,
+                'avg_fed_funds_rate': 3.58,
                 'period_days': period_days
             }
 
