@@ -318,7 +318,6 @@ def render_all_channels_view(
         title=t('saturation.saturation_curves_title'),
         labels={spend_col: spend_col, revenue_col: revenue_col}
     )
-    add_reference_vlines(fig1, channel_params, channels, annotate=True)
     fig1.update_layout(height=500)
     apply_dark_theme(fig1)
     st.plotly_chart(fig1, use_container_width=True)
@@ -335,7 +334,6 @@ def render_all_channels_view(
             title=t('saturation.roi_curves_title'),
             labels={spend_col: spend_col, t('optimizer.roi'): t('saturation.return_on_investment')}
         )
-        add_reference_vlines(fig2, channel_params, channels, annotate=False)
         fig2.update_layout(height=400)
         apply_dark_theme(fig2)
         st.plotly_chart(fig2, use_container_width=True)
@@ -349,7 +347,6 @@ def render_all_channels_view(
             title=t('saturation.marginal_roi_curves_title'),
             labels={spend_col: spend_col, t('saturation.marginal_roi'): t('saturation.incremental_roi')}
         )
-        add_reference_vlines(fig3, channel_params, channels, annotate=False)
         fig3.update_layout(height=400)
         apply_dark_theme(fig3)
         st.plotly_chart(fig3, use_container_width=True)
