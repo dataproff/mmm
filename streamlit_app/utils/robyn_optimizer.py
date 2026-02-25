@@ -152,9 +152,14 @@ class RobynOptimizer:
         """
         constrained = {}
 
+        # Default bounds for unconstrained channels (same as optimizer defaults)
+        default_min = total_budget * 0.05
+        default_max = total_budget * 0.50
+        default_bounds = (default_min, default_max)
+
         # First pass: apply min/max constraints
         for ch, spend in allocation.items():
-            ch_min, ch_max = constraints.get(ch, (0, total_budget))
+            ch_min, ch_max = constraints.get(ch, default_bounds)
             # Clamp to [min, max]
             constrained[ch] = max(ch_min, min(ch_max, spend))
 
@@ -171,7 +176,7 @@ class RobynOptimizer:
                         break
                     absorbable = []
                     for ch in constrained:
-                        ch_min, ch_max = constraints.get(ch, (0, total_budget))
+                        ch_min, ch_max = constraints.get(ch, default_bounds)
                         room = ch_max - constrained[ch]
                         if room > 0:
                             absorbable.append((ch, room))
@@ -194,7 +199,7 @@ class RobynOptimizer:
                         break
                     reducible = []
                     for ch in constrained:
-                        ch_min, ch_max = constraints.get(ch, (0, total_budget))
+                        ch_min, ch_max = constraints.get(ch, default_bounds)
                         room = constrained[ch] - ch_min
                         if room > 0:
                             reducible.append((ch, room))
@@ -344,24 +349,24 @@ class RobynOptimizer:
 
         n_channels = len(self.channels)
 
-        # If no constraints provided, use realistic default bounds:
+        # Default bounds for unconstrained channels:
         # - Minimum: 5% of budget per channel (ensures diversification)
         # - Maximum: 50% of budget per channel (prevents over-concentration)
+        min_per_channel = total_budget * 0.05
+        max_per_channel = total_budget * 0.50
+        default_bounds = (min_per_channel, max_per_channel)
+
         if not budget_constraints:
-            min_per_channel = total_budget * 0.05  # 5% minimum
-            max_per_channel = total_budget * 0.50  # 50% maximum
-            budget_constraints = {ch: (min_per_channel, max_per_channel) for ch in self.channels}
+            budget_constraints = {}
 
         def objective(x):
             allocation = {ch: x[i] for i, ch in enumerate(self.channels)}
-            # Optimize on base response (without context) for efficiency
-            # Context is applied to final result
             return -self._calculate_hill_response(allocation, period_days)
 
         def constraint_budget_eq(x):
             return np.sum(x) - total_budget
 
-        bounds = [budget_constraints.get(ch, (0, total_budget)) for ch in self.channels]
+        bounds = [budget_constraints.get(ch, default_bounds) for ch in self.channels]
         x0 = np.array([total_budget / n_channels] * n_channels)
 
         result = minimize(
